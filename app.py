@@ -5,48 +5,51 @@ from streamlit_js_eval import get_geolocation
 import urllib.parse
 from datetime import datetime
 
-# --- 1. CONFIGURATION ÉLITE ---
+# --- 1. CONFIGURATION ---
 st.set_page_config(
     page_title="YAMB - Abeilles du Sénégal",
     page_icon="🐝",
     layout="centered"
 )
 
-# --- 2. CHARTE GRAPHIQUE HAUTE LISIBILITÉ ---
+# --- 2. STYLE HAUTE LISIBILITÉ (CORRIGÉ) ---
 st.markdown("""
     <style>
-    /* Fond très clair pour lecture au soleil */
-    .stApp { background-color: #FFFFFF; color: #000000; }
+    /* Fond de page blanc pur pour le contraste */
+    .stApp { background-color: #FFFFFF; }
     
-    /* En-tête Prestige Abeilles du Sénégal */
+    /* En-tête vert profond Abeilles du Sénégal */
     .main-header {
-        background-color: #004d26; /* Vert profond */
-        color: #FCD116; /* Or pur */
+        background-color: #004d26;
+        color: #FCD116;
         padding: 25px;
         border-radius: 0 0 30px 30px;
         text-align: center;
         border-bottom: 5px solid #FCD116;
         margin-bottom: 20px;
     }
-    .company-name {
-        font-size: 12px;
-        letter-spacing: 2px;
-        font-weight: bold;
-        color: #FFFFFF;
-        text-transform: uppercase;
+
+    /* Texte de production (CORRECTION LISIBILITÉ) */
+    .stMetric label {
+        color: #000000 !important; /* Texte noir pour l'étiquette */
+        font-weight: bold !important;
+        font-size: 1.2rem !important;
     }
-    
-    /* Boutons et éléments de navigation */
-    .stButton>button {
-        background-color: #004d26 !important;
-        color: white !important;
-        border-radius: 10px;
-        border: 2px solid #FCD116;
-        font-weight: bold;
-        width: 100%;
+    div[data-testid="stMetricValue"] {
+        color: #004d26 !important; /* Vert foncé pour le chiffre */
+        font-size: 3rem !important;
+        font-weight: 800 !important;
     }
+    div[data-testid="stMetricDelta"] {
+        color: #00853f !important; /* Vert clair pour le delta */
+        background-color: #e8f5e9;
+        padding: 5px;
+        border-radius: 5px;
+    }
+
+    /* Titres noirs */
+    h1, h2, h3 { color: #000000 !important; }
     
-    /* Style Spécial Bouton SOS */
     .whatsapp-btn {
         background-color: #25D366;
         color: white !important;
@@ -58,73 +61,62 @@ st.markdown("""
         font-weight: 900;
         font-size: 1.2em;
         border: 3px solid #075E54;
-        margin-top: 10px;
     }
-    
-    /* Tabs lisibles */
-    .stTabs [data-baseweb="tab-list"] { background-color: #f1f1f1; border-radius: 10px; }
-    .stTabs [data-baseweb="tab"] { color: #004d26 !important; font-size: 16px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. FONCTION AIDE VOCALE ---
 def parler(texte):
-    st.components.v1.html(f"""
-        <script>
-        var msg = new SpeechSynthesisUtterance("{texte}");
-        msg.lang = 'fr-FR';
-        window.speechSynthesis.speak(msg);
-        </script>
-    """, height=0)
+    st.components.v1.html(f"""<script>var msg = new SpeechSynthesisUtterance("{texte}"); msg.lang = 'fr-FR'; window.speechSynthesis.speak(msg);</script>""", height=0)
 
-# --- 4. ENTÊTE OFFICIEL ---
+# --- 3. ENTÊTE ---
 st.markdown("""
     <div class='main-header'>
-        <div class='company-name'>Abeilles du Sénégal</div>
-        <h1 style='margin:0; font-size: 40px;'>YAMB</h1>
-        <p style='color:white; margin:0;'>L'assistant apicole intelligent</p>
+        <div style='font-size:12px; font-weight:bold; color:white;'>ABEILLES DU SÉNÉGAL</div>
+        <h1 style='margin:0; color:#FCD116;'>YAMB</h1>
+        <p style='color:white; margin:0;'>Unité d'Élite Apicole</p>
     </div>
     """, unsafe_allow_html=True)
 
-# --- 5. NAVIGATION ---
+# --- 4. NAVIGATION ---
 tabs = st.tabs(["🍯 RÉCOLTE", "📸 TERRAIN", "🚨 SOS"])
 
 with tabs[0]:
-    if st.button("🔊 ÉCOUTER LES INSTRUCTIONS (RÉCOLTE)"):
-        parler("Calculateur de récolte Abeilles du Sénégal. Écrivez le nombre de vos ruches.")
-    st.subheader("Estimation de la production")
-    nb = st.number_input("Combien de ruches ?", min_value=1, value=10)
-    st.metric("Récolte prévue", f"{nb * 12} kg", "Miel Bio")
+    if st.button("🔊 ÉCOUTER (Aide Récolte)"):
+        parler("Calculateur Abeilles du Sénégal. Indiquez le nombre de ruches pour voir votre production.")
+    
+    st.header("Estimation de la production")
+    
+    # Sélecteur de ruches
+    nb_ruches = st.number_input("Combien de ruches avez-vous ?", min_value=1, value=10, step=1)
+    
+    # Calcul et Affichage (LISIBILITÉ MAXIMALE)
+    production = nb_ruches * 12
+    st.metric(label="Récolte prévue (kg)", value=f"{production} kg", delta="Miel 100% Bio")
+    
+    st.markdown("---")
+    st.write("**Conseil :** Cette estimation se base sur une moyenne de 12kg par ruche.")
 
 with tabs[1]:
-    if st.button("🔊 ÉCOUTER LES INSTRUCTIONS (PHOTO)"):
-        parler("Prenez une photo de votre rucher pour le suivi technique.")
-    st.subheader("Photo de contrôle")
-    st.camera_input("Scanner la ruche")
+    st.header("Photo Terrain")
+    st.camera_input("Prendre une photo")
 
 with tabs[2]:
-    if st.button("🔊 ÉCOUTER LES INSTRUCTIONS (URGENCE)"):
-        parler("Alerte urgence. Choisissez le problème et appuyez sur le bouton vert pour prévenir Abeilles du Sénégal.")
-    st.subheader("Signaler une urgence")
-    danger = st.selectbox("Quel est le problème ?", ["🔥 Feu", "🥷 Vol", "🐝 Maladie"])
-    
-    msg = f"🚨 *ALERTE ABEILLES DU SÉNÉGAL*\n📍 Problème : {danger}\nLocalisation envoyée via l'application YAMB."
+    st.header("Signalement Urgent")
+    danger = st.selectbox("Urgence :", ["🔥 Incendie", "🥷 Vol", "🐝 Mortalité"])
+    msg = f"🚨 *ABEILLES DU SÉNÉGAL* : {danger} signalé via YAMB."
     url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
-    st.markdown(f'<a href="{url}" target="_blank" class="whatsapp-btn">🟢 ENVOYER ALERTE WHATSAPP</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="{url}" target="_blank" class="whatsapp-btn">🟢 ENVOYER L\'ALERTE</a>', unsafe_allow_html=True)
 
-# --- 6. CARTE SATELLITE ---
-st.divider()
+# --- 5. CARTE ---
 st.markdown("### 📍 Emplacement de vos ruches")
 loc = get_geolocation()
 if loc:
     lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
     m = folium.Map(location=[lat, lon], zoom_start=16)
-    # Couche Satellite Google pour voir les arbres
     folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-    folium.Marker([lat, lon], popup="Mon Rucher", icon=folium.Icon(color='green')).add_to(m)
+    folium.Marker([lat, lon], icon=folium.Icon(color='green')).add_to(m)
     st_folium(m, width="100%", height=300)
 else:
-    st.info("📡 GPS en attente... Cliquez sur 'Autoriser' si votre téléphone le demande.")
+    st.info("📡 GPS en attente de signal...")
 
-# --- 7. PIED DE PAGE ---
-st.markdown("<p style='text-align:center; padding:20px; font-weight:bold;'>© 2025 Abeilles du Sénégal</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-weight:bold; color:#004d26;'>© 2025 Abeilles du Sénégal</p>", unsafe_allow_html=True)
