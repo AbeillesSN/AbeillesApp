@@ -8,29 +8,35 @@ from streamlit_folium import st_folium
 import folium
 
 # --- CONFIGURATION DU THÈME ---
-st.set_page_config(page_title="Abeilles du Sénégal - Expert", layout="wide", page_icon="🐝")
+st.set_page_config(page_title="Abeilles du Sénégal", layout="wide", page_icon="🐝")
 
-# CSS pour le style Or et Nature (Identité Abeilles du Sénégal)
+# CSS pour corriger la lisibilité (Contraste élevé)
 st.markdown("""
     <style>
     .stApp { background-color: #fcfaf0; }
-    .stButton>button { background-color: #f1c40f; color: black; border-radius: 10px; border: none; font-weight: bold; width: 100%; }
-    .stDownloadButton>button { background-color: #27ae60; color: white; border-radius: 10px; width: 100%; }
-    h1 { color: #d35400; text-align: center; margin-bottom: 0px; }
-    h3 { color: #2e7d32; text-align: center; margin-top: 0px; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #eee; }
+    /* Titres en Marron foncé pour être très lisibles */
+    h1, h2, h3 { color: #5d4037 !important; text-align: center; font-weight: bold; }
+    /* Texte d'info en noir */
+    .stMarkdown, p { color: #212121 !important; }
+    /* Boutons avec texte noir bien visible */
+    .stButton>button { background-color: #f1c40f; color: #000000 !important; border-radius: 10px; font-weight: bold; border: 2px solid #d35400; }
+    .stDownloadButton>button { background-color: #2e7d32; color: #ffffff !important; border-radius: 10px; }
+    /* Boîtes de mesures avec texte foncé */
+    [data-testid="stMetricValue"] { color: #d35400 !important; font-weight: bold; }
+    [data-testid="stMetricLabel"] { color: #5d4037 !important; }
     </style>
     """, unsafe_allow_html=True)
 
 DB_FILE = "base_apicole_senegal_finale.csv"
 
 # --- EN-TÊTE ET LOGO ---
-col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 2, 1])
+col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 3, 1])
 with col_logo_2:
     if os.path.exists("logo.png.png"):
         st.image("logo.png.png", use_container_width=True)
-    st.title("Abeilles du Sénégal")
-    st.write("### Plateforme d'Expertise Apicole")
+    # Titre en contraste élevé
+    st.markdown("<h1>ABEILLES DU SÉNÉGAL</h1>", unsafe_allow_html=True)
+    st.markdown("<h3>Plateforme d'Expertise Apicole</h3>", unsafe_allow_html=True)
 
 # --- LOGIQUE ---
 def estimer_business(potentiel, nb_ruches, prix_kg):
@@ -55,14 +61,14 @@ def sauvegarder_donnees(zone, lat, lon, potentiel, region, dept, kg, cfa):
         df.to_csv(DB_FILE, mode='a', header=False, index=False)
 
 # --- INTERFACE ---
-tab1, tab2 = st.tabs(["🚀 Nouveau Diagnostic", "📊 Rapports & Cartographie"])
+tab1, tab2 = st.tabs(["🚀 Nouveau Diagnostic", "📊 Rapports & Carte Satellite"])
 
 with tab1:
     loc = get_geolocation()
     if loc:
         lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
         
-        # LOGIQUE DÉTECTION SÉNÉGAL
+        # LOGIQUE DÉTECTION ZONES
         if 14.7 < lat < 15.8 and lon < -17.0:
             res = {"zone": "Niayes", "pot": "Élevé", "flore": "Eucalyptus, Agrumes", "conseil": "Brise-vent requis."}
         elif lat > 15.3 and lon > -16.0:
@@ -74,56 +80,57 @@ with tab1:
         else:
             res = {"zone": "Bassin Arachidier", "pot": "Moyen", "flore": "Baobab, Kad", "conseil": "Reboisement."}
             
-        st.info(f"📍 **Zone identifiée par Abeilles du Sénégal : {res['zone']}**")
+        st.success(f"📍 **Zone détectée : {res['zone']}**")
         
-        with st.expander("💰 Simulation de Production", expanded=True):
+        with st.container(border=True):
+            st.markdown("<p style='text-align:center; font-weight:bold;'>Simulateur de Production</p>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             ruches = c1.number_input("Nombre de ruches", min_value=1, value=10)
-            prix = c2.select_slider("Prix de vente KG (CFA)", options=[3000, 4000, 5000, 6000], value=5000)
+            prix = c2.select_slider("Prix du KG (CFA)", options=[3000, 4000, 5000, 6000], value=5000)
             
             rend, kg_tot, ca = estimer_business(res['pot'], ruches, prix)
             
             m1, m2, m3 = st.columns(3)
-            m1.metric("Rendement Est.", f"{rend} kg/u")
+            m1.metric("Rendement", f"{rend} kg/u")
             m2.metric("Total Miel", f"{kg_tot} kg")
             m3.metric("Revenu CFA", f"{ca:,} FCFA")
 
-        st.markdown("---")
-        reg = st.selectbox("Région de l'expertise", ["Dakar", "Ziguinchor", "Diourbel", "Saint-Louis", "Tambacounda", "Kaolack", "Thiès", "Louga", "Fatick", "Kolda", "Matam", "Kaffrine", "Kédougou", "Sédhiou"])
-        dept = st.text_input("Préciser la Localité")
+        st.divider()
+        reg = st.selectbox("Sélectionnez la Région", ["Dakar", "Ziguinchor", "Diourbel", "Saint-Louis", "Tambacounda", "Kaolack", "Thiès", "Louga", "Fatick", "Kolda", "Matam", "Kaffrine", "Kédougou", "Sédhiou"])
+        dept = st.text_input("Localité précise (ex: Bignona)")
 
-        if st.button("✅ VALIDER L'EXPERTISE ABEILLES DU SÉNÉGAL"):
+        if st.button("✅ ENREGISTRER L'EXPERTISE"):
             sauvegarder_donnees(res['zone'], lat, lon, res['pot'], reg, dept, kg_tot, ca)
-            st.success("Expertise enregistrée avec succès sous le label Abeilles du Sénégal !")
+            st.success("Expertise archivée avec succès !")
             st.balloons()
     else:
-        st.warning("⚠️ Accès GPS requis pour le diagnostic territorial...")
+        st.warning("🌐 Signal GPS en attente... Vérifiez vos autorisations.")
 
 with tab2:
     if os.path.exists(DB_FILE):
         df = pd.read_csv(DB_FILE)
         
         st.download_button(
-            label="📤 TÉLÉCHARGER LE RAPPORT ABEILLES DU SÉNÉGAL",
+            label="📥 TÉLÉCHARGER LE RAPPORT COMPLET (CSV)",
             data=df.to_csv(index=False).encode('utf-8'),
-            file_name=f"rapport_Abeilles_du_Senegal_{datetime.now().strftime('%d_%m_%Y')}.csv",
+            file_name=f"Rapport_Abeilles_du_Senegal_{datetime.now().strftime('%d_%m_%Y')}.csv",
             mime='text/csv',
         )
 
-        st.markdown("---")
-        st.subheader("🛰️ Cartographie Satellite des Zones Exploitées")
+        st.divider()
+        st.subheader("🛰️ Carte Satellite des Ruchers")
         m = folium.Map(location=[14.4974, -14.4524], zoom_start=7)
         folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', attr='Google', name='Google Satellite').add_to(m)
 
         for i, row in df.iterrows():
             folium.Marker(
                 [row['Lat'], row['Lon']], 
-                popup=f"<b>Abeilles du Sénégal - {row['Departement']}</b><br>{row['Revenu_CFA']:,} CFA",
+                popup=f"<b>{row['Departement']}</b><br>{row['Revenu_CFA']:,} CFA",
                 icon=folium.Icon(color='orange')
             ).add_to(m)
         st_folium(m, width="100%", height=400)
         
-        st.write("### 📄 Registre des expertises")
+        st.write("### 📄 Historique des Diagnostics")
         st.dataframe(df, use_container_width=True)
     else:
-        st.info("Aucun historique pour Abeilles du Sénégal. Commencez par enregistrer une expertise.")
+        st.info("Aucun historique disponible.")
