@@ -6,62 +6,45 @@ import base64
 from datetime import datetime
 import urllib.parse
 
-# --- BASE DE DONNÉES BOTANIQUE COMPLÈTE AVEC IMAGES ---
+# --- CONFIGURATION PRESTIGE ---
+st.set_page_config(page_title="YAMB - Expertise Apicole", layout="wide", page_icon="🐝")
+
+# --- BASE DE DONNÉES BOTANIQUE ---
 plantes_melliferes = {
     "Anacardier (Pomme Cajou)": {
-        "floraison": [1, 2, 3, 4], "miel": "Clair, goût fruité", "potentiel": "⭐⭐⭐⭐⭐",
+        "floraison": [1, 2, 3, 4], "miel": "Clair, fruité", "potentiel": "⭐⭐⭐⭐⭐",
         "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Anacardium_occidentale_2.jpg/800px-Anacardium_occidentale_2.jpg"
     },
     "Manguier": {
-        "floraison": [12, 1, 2, 3], "miel": "Ambré, très parfumé", "potentiel": "⭐⭐⭐⭐",
+        "floraison": [12, 1, 2, 3], "miel": "Ambré, parfumé", "potentiel": "⭐⭐⭐⭐",
         "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Mangifera_indica_%28Mango%29_Flower_in_Hyderabad%2C_India.jpg/800px-Mangifera_indica_%28Mango%29_Flower_in_Hyderabad%2C_India.jpg"
     },
     "Eucalyptus": {
-        "floraison": [9, 10, 11, 12], "miel": "Mentholé, médicinal", "potentiel": "⭐⭐⭐⭐⭐",
+        "floraison": [9, 10, 11, 12], "miel": "Mentholé", "potentiel": "⭐⭐⭐⭐⭐",
         "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Eucalyptus_globulus_flower_001.jpg/800px-Eucalyptus_globulus_flower_001.jpg"
     },
     "Néré (Parkia biglobosa)": {
-        "floraison": [2, 3, 4], "miel": "Sombre, riche en minéraux", "potentiel": "⭐⭐⭐⭐",
+        "floraison": [2, 3, 4], "miel": "Sombre, minéral", "potentiel": "⭐⭐⭐⭐",
         "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Parkia_biglobosa_Kigoma.jpg/800px-Parkia_biglobosa_Kigoma.jpg"
     },
-    "Fromager (Ceiba pentandra)": {
-        "floraison": [1, 2, 3], "miel": "Léger, liquide", "potentiel": "⭐⭐⭐",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Ceiba_pentandra_flower.jpg/800px-Ceiba_pentandra_flower.jpg"
-    },
-    "Zizyphus (Maure)": {
-        "floraison": [8, 9, 10], "miel": "Rare, très prisé (Sidr)", "potentiel": "⭐⭐⭐⭐⭐",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Ziziphus_mauritiana_leaves_and_fruit.jpg/800px-Ziziphus_mauritiana_leaves_and_fruit.jpg"
-    },
-    "Acacia (Kad/Sedd)": {
-        "floraison": [11, 12, 1], "miel": "Très clair, cristallise peu", "potentiel": "⭐⭐⭐⭐⭐",
+    "Acacia (Kad / Sedd)": {
+        "floraison": [11, 12, 1], "miel": "Très clair", "potentiel": "⭐⭐⭐⭐⭐",
         "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Vachellia_seyal_in_flower_in_Ethiopia.jpg/800px-Vachellia_seyal_in_flower_in_Ethiopia.jpg"
-    },
-    "Palmier à huile": {
-        "floraison": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "miel": "Source de pollen constante", "potentiel": "⭐⭐",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Oil_palm_%28Elaeis_guineensis%29_in_Blantyre%2C_Malawi_01.jpg/800px-Oil_palm_%28Elaeis_guineensis%29_in_Blantyre%2C_Malawi_01.jpg"
-    },
-    "Kinkeliba": {
-        "floraison": [7, 8, 9], "miel": "Miel sauvage de brousse", "potentiel": "⭐⭐⭐",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Combretum_micranthum.jpg/800px-Combretum_micranthum.jpg"
-    },
-    "Mélaleuca (Tea Tree)": {
-        "floraison": [5, 6, 7], "miel": "Puissant, antibactérien", "potentiel": "⭐⭐⭐⭐",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Melaleuca_alternifolia_-_Australian_Native_Plant_2022-07-06.jpg/800px-Melaleuca_alternifolia_-_Australian_Native_Plant_2022-07-06.jpg"
     }
 }
 
 st.markdown("""
     <style>
-    .main-header { background: linear-gradient(135deg, #1B5E20, #004D40); color: #FFD600; padding: 25px; border-radius: 15px; text-align: center; }
-    .plant-card-visual { background: #F1F8E9; border: 1px solid #C8E6C9; padding: 10px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; }
-    .plant-card-visual img { border-radius: 5px; margin-right: 10px; }
-    .current-bloom { color: #1B5E20; font-weight: bold; }
-    .next-bloom { color: #666; font-weight: bold; }
-    .stButton>button { background-color: #1B5E20 !important; color: white !important; font-weight: bold; border-radius: 12px; }
+    .main-header { background: linear-gradient(135deg, #1B5E20, #003300); color: #FFD600; padding: 25px; border-radius: 15px; text-align: center; }
+    .yamb-card { background: #F1F8E9; border: 1px solid #C8E6C9; padding: 10px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; }
+    .yamb-card img { border-radius: 8px; margin-right: 15px; border: 2px solid #FFD600; }
+    .alert-harvest { background: #FFD600; color: black; padding: 15px; border-radius: 10px; font-weight: bold; border: 2px solid black; text-align: center; }
+    .btn-action { color: white !important; padding: 15px; border-radius: 10px; text-align: center; display: block; text-decoration: none; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<div class='main-header'><h1>🐝 ATLAS MELLIFÈRE VISUEL</h1><p>IDENTIFICATION ET PRÉDICTION</p></div>", unsafe_allow_html=True)
+# --- HEADER YAMB ---
+st.markdown("<div class='main-header'><h1>🐝 YAMB - ABEILLES DU SÉNÉGAL</h1><p>VOTRE ASSISTANT D'EXPERTISE APICOLE LOCALE</p></div>", unsafe_allow_html=True)
 
 loc = get_geolocation()
 
@@ -72,69 +55,53 @@ if loc:
     col_flora, col_map = st.columns([1, 1])
 
     with col_flora:
-        st.markdown("### 🌳 Guide des Plantes (Rayon 5km)")
-        selection = st.multiselect("Sélectionnez les plantes mellifères pour les visualiser :", 
-                                 list(plantes_melliferes.keys()), 
-                                 default=["Anacardier (Pomme Cajou)", "Manguier"])
+        st.markdown("### 🌳 Guide Visuel de la Flore (Rayon 5km)")
+        selection = st.multiselect("Identifiez les plantes présentes :", list(plantes_melliferes.keys()), default=["Manguier"])
         
-        st.markdown("---")
         for p in selection:
             info = plantes_melliferes[p]
-            status_text = ""
-            status_class = ""
-            if mois_actuel in info['floraison']:
-                status_text = "🌸 STATUT : EN FLORAISON ACTUELLE"
-                status_class = "current-bloom"
-            else:
-                prochain_mois = [m for m in info['floraison'] if m > mois_actuel]
-                if not prochain_mois: # Si floraison passée pour cette année, on prend le premier mois de l'année suivante
-                    prochain_mois = [info['floraison'][0]]
-                status_text = f"⏳ STATUT : Prochaine floraison en mois {prochain_mois[0]}"
-                status_class = "next-bloom"
+            en_fleurs = mois_actuel in info['floraison']
+            status = "🌸 EN FLORAISON ACTUELLE" if en_fleurs else "⏳ REPOS (Prochainement)"
+            color = "#1B5E20" if en_fleurs else "#666"
             
             st.markdown(f"""
-                <div class='plant-card-visual'>
-                    <img src="{info['image']}" width="100">
+                <div class='yamb-card'>
+                    <img src="{info['image']}" width="110">
                     <div>
                         <b style='font-size:18px;'>{p}</b><br>
-                        <span class='{status_class}'>{status_text}</span><br>
+                        <span style='color:{color}; font-weight:bold;'>{status}</span><br>
                         <small>Miel : {info['miel']} | Potentiel : {info['potentiel']}</small>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
 
     with col_map:
-        st.markdown("### 🗺️ Carte d'Analyse (Zone 5km)")
+        st.markdown("### 🛰️ Carte Satellite du Rucher")
         m = folium.Map(location=[lat, lon], zoom_start=14)
         folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
         folium.Circle([lat, lon], radius=3000, color='green', fill=True, opacity=0.1).add_to(m)
-        folium.Circle([lat, lon], radius=5000, color='orange', fill=False).add_to(m)
-        folium.Marker([lat, lon], icon=folium.Icon(color='green')).add_to(m)
-        st_folium(m, width="100%", height=500)
+        folium.Marker([lat, lon], icon=folium.Icon(color='green', icon='info-sign')).add_to(m)
+        st_folium(m, width="100%", height=450)
 
-    # --- ALERTE RÉCOLTE DYNAMIQUE ---
+    # --- ALERTES RÉCOLTE ---
     floraison_active = [p for p in selection if mois_actuel in plantes_melliferes[p]['floraison']]
     if floraison_active:
-        st.markdown(f"""
-            <div style='background: #FFD600; color: black; padding: 15px; border-radius: 10px; font-weight: bold; border: 2px solid black; margin-top:20px;'>
-                🔔 ALERTE ACTIVE : Miellée en cours sur {', '.join(floraison_active)} ! Préparez la récolte.
-            </div>
-        """, unsafe_allow_html=True)
-    
-    # --- TRANSMISSION DES DONNÉES ---
+        st.markdown(f"<div class='alert-harvest'>🍯 MIEL DE {', '.join(floraison_active).upper()} : RÉCOLTE IMMINENTE !</div>", unsafe_allow_html=True)
+
+    # --- TRANSMISSION ---
     st.divider()
+    st.markdown("### 📄 Rapport Certifié & Envoi Direction")
+    
+    rapport = f"RAPPORT YAMB - EXPERTISE DU {datetime.now().strftime('%d/%m/%Y')}\nPosition : {lat}, {lon}\nFlore validée : {selection}"
+    b64 = base64.b64encode(rapport.encode()).decode()
+    
     c1, c2 = st.columns(2)
-    
-    rapport = f"RAPPORT EXPERT - {lat}, {lon}\nPlantes détectées : {selection}\nMois : {mois_actuel}"
-    
     with c1:
-        b64 = base64.b64encode(rapport.encode()).decode()
-        st.markdown(f'<a href="data:file/txt;base64,{b64}" download="Rapport_Visuel_Flore.pdf" style="text-decoration:none;"><div style="background-color:#D32F2F; color:white; padding:15px; border-radius:10px; text-align:center; font-weight:bold;">📄 TÉLÉCHARGER LE RAPPORT PDF</div></a>', unsafe_allow_html=True)
-    
+        st.markdown(f'<a href="data:file/txt;base64,{b64}" download="Rapport_YAMB.pdf" class="btn-action" style="background:#D32F2F;">📄 TÉLÉCHARGER LE RAPPORT PDF</a>', unsafe_allow_html=True)
     with c2:
-        sujet = urllib.parse.quote("Rapport de Flore Visuel - Abeilles du Sénégal")
+        sujet = urllib.parse.quote("Expertise YAMB - Abeilles du Sénégal")
         corps = urllib.parse.quote(rapport)
-        st.markdown(f'<a href="mailto:direction@abeillesdusenegal.sn?subject={sujet}&body={corps}" style="text-decoration:none;"><div style="background-color:#1976D2; color:white; padding:15px; border-radius:10px; text-align:center; font-weight:bold;">📧 ENVOYER À LA DIRECTION</div></a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="mailto:direction@abeillesdusenegal.sn?subject={sujet}&body={corps}" class="btn-action" style="background:#1976D2;">📧 ENVOYER PAR EMAIL</a>', unsafe_allow_html=True)
 
 else:
-    st.info("ℹ️ Info : Synchronisation GPS pour la dernière précision...")
+    st.info("📡 Recherche du signal YAMB (GPS)... Veuillez patienter.")
