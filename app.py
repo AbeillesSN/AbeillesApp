@@ -3,158 +3,120 @@ import folium
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 import urllib.parse
+import requests
+import pandas as pd
+from datetime import datetime
 
-# --- 1. CONFIGURATION ---
-st.set_page_config(
-    page_title="YAMB - Abeilles du Sénégal",
-    page_icon="🐝",
-    layout="centered"
-)
+# --- 1. CONFIGURATION & DESIGN ---
+st.set_page_config(page_title="YAMB PRO - Abeilles du Sénégal", page_icon="🐝", layout="centered")
 
-# --- 2. CHARTE GRAPHIQUE : BEIGE, RAYON, RUCHE ---
 st.markdown("""
     <style>
-    /* Fond Beige Alvéole */
-    .stApp { background-color: #FDF5E6; } 
-
-    /* En-tête Bois de Ruche */
+    .stApp { background-color: #FDF5E6; }
     .main-header {
         background: linear-gradient(135deg, #8B4513 0%, #5D2E0A 100%);
-        color: #FFC30B;
-        padding: 30px;
-        border-radius: 0 0 50px 50px;
-        text-align: center;
-        border-bottom: 8px solid #FFC30B;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        color: #FFC30B; padding: 25px; border-radius: 0 0 40px 40px;
+        text-align: center; border-bottom: 6px solid #FFC30B;
     }
-
-    /* Boite du Verset Coranique */
-    .verset-box {
-        background-color: #FFF9E3;
-        border-left: 8px solid #FFC30B;
-        padding: 20px;
-        margin: 25px 0;
-        font-style: italic;
-        color: #5D2E0A;
-        font-size: 1.1em;
-        border-radius: 10px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+    .region-tag {
+        background-color: #FFC30B; color: #5D2E0A;
+        padding: 5px 15px; border-radius: 20px;
+        font-weight: bold; font-size: 14px; margin-bottom: 10px; display: inline-block;
     }
-
-    /* Affichage de la Production (Haute Lisibilité) */
-    div[data-testid="stMetricValue"] {
-        color: #8B4513 !important; /* Brun Bois */
-        font-size: 3.8rem !important;
-        font-weight: 900 !important;
-        text-shadow: 2px 2px 0px #FFC30B;
+    .flore-card {
+        background-color: #FFF9E3; border-left: 5px solid #8B4513;
+        padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #EADDCA;
     }
-    div[data-testid="stMetricLabel"] {
-        color: #5D2E0A !important;
-        font-size: 1.4rem !important;
-        font-weight: bold !important;
-    }
-
-    /* Style des onglets (Beige/Miel) */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #EADDCA;
-        border-radius: 15px;
-        padding: 5px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        color: #5D2E0A !important;
-        font-weight: bold;
-    }
-
-    /* Bouton SOS WhatsApp */
-    .whatsapp-btn {
-        background-color: #25D366;
-        color: white !important;
-        padding: 20px;
-        border-radius: 20px;
-        text-decoration: none;
-        display: block;
-        text-align: center;
-        font-weight: 900;
-        font-size: 1.3em;
-        border: 4px solid #FCD116;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    h1, h2, h3 { color: #5D2E0A !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LECTURE DU VERSET AU DÉMARRAGE ---
-def lire_verset_demarrage():
-    # Traduction du verset 69 de la Sourate An-Nahl
-    verset_audio = "De leur ventre, sort une liqueur, aux couleurs variées, dans laquelle il y a une guérison pour les gens."
-    st.components.v1.html(f"""
-        <script>
-        var msg = new SpeechSynthesisUtterance("{verset_audio}");
-        msg.lang = 'fr-FR';
-        msg.rate = 0.85; 
-        window.speechSynthesis.speak(msg);
-        </script>
-    """, height=0)
+# --- 2. BASE DE DONNÉES EXPERTE : FLORE PAR RÉGION ---
+flore_nationale = [
+    # Arbres de Savane (Partout)
+    {"nom": "Kadd (Faidherbia)", "zones": ["Nord", "Centre", "Est"], "debut": 11, "fin": 3, "type": "Arbre"},
+    {"nom": "Acacia Sénégal (Gommier)", "zones": ["Nord", "Centre"], "debut": 8, "fin : 10, "type": "Arbre"},
+    
+    # Zone des Niayes / Littoral
+    {"nom": "Eucalyptus", "zones": ["Niayes"], "debut": 3, "fin": 6, "type": "Arbre"},
+    {"nom": "Agrumes & Maraîchage", "zones": ["Niayes", "Centre"], "debut": 2, "fin": 4, "type": "Culture"},
+    
+    # Casamance & Sénégal Oriental
+    {"nom": "Néré (Parkia)", "zones": ["Sud", "Est"], "debut": 1, "fin": 4, "type": "Arbre"},
+    {"nom": "Fromager (Ceiba)", "zones": ["Sud"], "debut": 12, "fin": 2, "type": "Arbre"},
+    {"nom": "Manguier & Anacardier", "zones": ["Sud", "Niayes", "Centre"], "debut": 12, "fin": 3, "type": "Culture"},
+    
+    # Bassin Arachidier / Centre
+    {"nom": "Ziziphus (Sidem/Jujubier)", "zones": ["Centre", "Nord"], "debut": 9, "fin": 11, "type": "Arbuste"},
+    {"nom": "Baobab", "zones": ["Centre", "Sud", "Est"], "debut": 5, "fin": 7, "type": "Arbre"}
+]
+df_flore = pd.DataFrame(flore_nationale)
 
-if 'verset_lu' not in st.session_state:
-    lire_verset_demarrage()
-    st.session_state.verset_lu = True
+# --- 3. LOGIQUE DE DÉTECTION DE ZONE ---
+def obtenir_zone(lat):
+    if lat > 15.5: return "Nord"
+    elif 13.5 < lat <= 15.5: return "Centre"
+    elif lat <= 13.5: return "Sud"
+    return "Est" # Simplification par latitude
 
-# --- 4. ENTÊTE PRESTIGE ---
-st.markdown("""
-    <div class='main-header'>
-        <div style='font-size:14px; font-weight:bold; color:#FFC30B; letter-spacing:5px;'>ABEILLES DU SÉNÉGAL</div>
-        <h1 style='margin:10px 0; color:white; font-size:55px;'>🐝 YAMB</h1>
-        <p style='color:#F5F5DC; margin:0; font-size:18px;'>Unité d'Élite Apicole</p>
-    </div>
-    """, unsafe_allow_html=True)
+# --- 4. ACCUEIL & VERSET ---
+if 'init' not in st.session_state:
+    verset = "De leur ventre, sort une liqueur, aux couleurs variées, dans laquelle il y a une guérison pour les gens."
+    st.components.v1.html(f"<script>var m = new SpeechSynthesisUtterance('{verset}'); m.lang='fr-FR'; window.speechSynthesis.speak(m);</script>", height=0)
+    st.session_state.init = True
 
-st.markdown("""
-    <div class='verset-box'>
-        "De leur ventre, sort une liqueur, aux couleurs variées, dans laquelle il y a une guérison pour les gens." <br>
-        <strong style='color:#8B4513; float:right;'>— Sourate An-Nahl, Verset 69</strong>
-        <br>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown("<div class='main-header'><div style='font-size:12px; font-weight:bold; color:#FFC30B;'>ABEILLES DU SÉNÉGAL</div><h1 style='margin:0; color:white;'>🐝 YAMB NATIONAL</h1></div>", unsafe_allow_html=True)
 
-# --- 5. NAVIGATION ---
-tabs = st.tabs(["🍯 RÉCOLTE", "📸 PHOTO", "🚨 SOS"])
+# --- 5. MODULES PRINCIPAUX ---
+tabs = st.tabs(["🌸 FLORE & MÉTÉO", "🍯 RÉCOLTE", "🚨 SOS"])
+
+loc = get_geolocation()
+mois = datetime.now().month
 
 with tabs[0]:
-    st.header("Estimation de production")
-    nb = st.number_input("Nombre de ruches :", min_value=1, value=10, step=1)
-    
-    # Calcul
-    production = nb * 12
-    st.metric(label="Miel attendu (kg)", value=f"{production} kg", delta="Qualité Premium")
-    st.write("**Note :** Moyenne Abeilles du Sénégal : 12kg/ruche.")
+    if loc:
+        lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
+        zone = obtenir_zone(lat)
+        
+        st.markdown(f"<div class='region-tag'>📍 Zone détectée : {zone} Sénégal</div>", unsafe_allow_html=True)
+        
+        # Météo
+        try:
+            w = requests.get(f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true").json()['current_weather']
+            col1, col2 = st.columns(2)
+            col1.metric("Température", f"{w['temperature']}°C")
+            col2.metric("Vent", f"{w['windspeed']} km/h")
+        except: pass
+
+        st.divider()
+        
+        # Flore spécifique à la zone et au mois
+        st.subheader(f"Inventaire Mellifère - Mois de {datetime.now().strftime('%B')}")
+        fleurs_zone = df_flore[df_flore['zones'].apply(lambda x: zone in x)]
+        en_fleur = fleurs_zone[(fleurs_zone['debut'] <= mois) & (fleurs_zone['fin'] >= mois)]
+        
+        if not en_fleur.empty:
+            for _, r in en_fleur.iterrows():
+                st.markdown(f"<div class='flore-card'><strong>{r['nom']}</strong> ({r['type']})<br>Période propice pour ce secteur.</div>", unsafe_allow_html=True)
+        else:
+            st.warning("Période de repos floral. Vérifiez les apports en eau.")
+
+        # Carte 3km
+        m = folium.Map(location=[lat, lon], zoom_start=14)
+        folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
+        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, opacity=0.3).add_to(m)
+        st_folium(m, width="100%", height=300)
+    else:
+        st.info("📡 Veuillez autoriser la localisation pour analyser votre zone (Niayes, Casamance, etc.)")
 
 with tabs[1]:
-    st.header("Suivi du Rucher")
-    st.camera_input("Capturer l'état des cadres")
+    st.subheader("Calculateur de Production")
+    nb = st.number_input("Nombre de ruches", min_value=1, value=5)
+    st.metric("Estimation (Moyenne Nationale)", f"{nb * 12} kg", "Miel Pur")
 
 with tabs[2]:
-    st.header("Signalement Urgence")
-    danger = st.selectbox("Type d'incident :", ["🔥 Incendie", "🥷 Vol / Vandalisme", "🐝 Mortalité groupée"])
-    
-    msg = f"🚨 *ALERTE ABEILLES DU SÉNÉGAL*\n⚠️ Problème : {danger}\n📍 Localisation via YAMB."
-    url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
-    st.markdown(f'<a href="{url}" target="_blank" class="whatsapp-btn">🟢 ENVOYER L\'ALERTE WHATSAPP</a>', unsafe_allow_html=True)
+    st.subheader("Alerte Sécurité")
+    type_a = st.selectbox("Urgence", ["Incendie", "Vol", "Intoxication (Pesticides)"])
+    msg = f"ALERTE ABEILLES DU SENEGAL - {type_a} au rucher."
+    st.markdown(f'<a href="https://wa.me/?text={msg}" target="_blank" style="display:block; background:#25D366; color:white; padding:20px; text-align:center; border-radius:15px; text-decoration:none; font-weight:bold;">📲 SIGNALER VIA WHATSAPP</a>', unsafe_allow_html=True)
 
-# --- 6. GÉOLOCALISATION ---
-st.divider()
-st.subheader("📍 Position du Rucher")
-loc = get_geolocation()
-if loc:
-    lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
-    m = folium.Map(location=[lat, lon], zoom_start=17)
-    # Fond Satellite Google
-    folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-    folium.Marker([lat, lon], popup="Mon Rucher", icon=folium.Icon(color='orange', icon='leaf')).add_to(m)
-    st_folium(m, width="100%", height=300)
-else:
-    st.info("📡 GPS en attente de signal... Vérifiez vos autorisations.")
-
-# --- 7. PIED DE PAGE ---
-st.markdown("<p style='text-align:center; padding:30px; font-weight:bold; color:#5D2E0A;'>© 2025 Abeilles du Sénégal - YAMB Version Finale</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; padding:30px; font-weight:bold; color:#5D2E0A;'>© 2025 Abeilles du Sénégal • Expertise Nationale</p>", unsafe_allow_html=True)
