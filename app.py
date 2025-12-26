@@ -4,145 +4,118 @@ from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 from datetime import datetime
 
-# --- CONFIGURATION ÉCRAN ---
-st.set_page_config(page_title="YAMB - Abeilles du Sénégal", layout="centered")
+# --- CONFIGURATION PRESTIGE ---
+st.set_page_config(page_title="YAMB - Dark Mode Auto", layout="centered")
 
+# --- LOGIQUE DE COULEURS DYNAMIQUES ---
+# Le mode nuit s'active automatiquement selon l'heure ou les paramètres système
 st.markdown("""
     <style>
-    .stApp { background-color: #FDFCF0; }
+    :root {
+        --yamb-green: #1B5E20;
+        --yamb-gold: #FFC107;
+        --yamb-amber: #FF8F00;
+        --bg-color: #FDFBF7;
+        --card-bg: #FFFFFF;
+        --text-color: #1B5E20;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-color: #0E1117;
+            --card-bg: #1A1C23;
+            --text-color: #E0E0E0;
+        }
+    }
+
+    .stApp { background-color: var(--bg-color); }
     header {visibility: hidden;}
 
-    /* Style Alvéoles et Header */
-    .yamb-header {
-        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
-        color: #FFD600;
-        padding: 20px;
-        border-radius: 0 0 40px 40px;
+    /* Header Adaptatif */
+    .premium-header {
+        background: linear-gradient(135deg, #1B5E20 0%, #051A07 100%);
+        color: var(--yamb-gold);
+        padding: 40px 20px;
+        border-radius: 0 0 50px 50px;
         text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    
-    .logo-container {
-        background: white;
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        margin: -40px auto 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        border: 3px solid #FFD600;
+        border-bottom: 5px solid var(--yamb-amber);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     }
 
-    /* Tableau de Bord Alvéolaire */
-    .hex-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 15px;
-        margin-top: 20px;
-    }
-
-    .hex-card {
-        width: 100px;
-        height: 115px;
-        background: white;
-        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        border: 2px solid #FFD600;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-
-    .hex-icon { font-size: 30px; margin-bottom: 5px; }
-    .hex-label { font-size: 10px; font-weight: bold; color: #1B5E20; text-transform: uppercase; }
-
-    /* Section Mobile Cards */
-    .mobile-card {
-        background: white;
+    /* Grille Alvéolaire Adaptative */
+    .alveole-card {
+        background: var(--card-bg);
+        border: 1px solid var(--yamb-gold);
         border-radius: 20px;
         padding: 20px;
-        margin-top: 20px;
-        border: 1px solid #FFD600;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        color: var(--text-color);
+    }
+    
+    .alveole-title { color: var(--yamb-gold); font-weight: 800; font-size: 12px; }
+
+    /* Boutons YAMB */
+    .stButton>button {
+        background: linear-gradient(to right, #1B5E20, #2E7D32) !important;
+        color: var(--yamb-gold) !important;
+        border-radius: 15px !important;
+        border: 1px solid var(--yamb-gold) !important;
+        height: 50px;
+        width: 100%;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. HEADER AVEC LOGO ---
+# --- HEADER & LOGO ---
 st.markdown("""
-    <div class='yamb-header'>
-        <h1 style='margin:0; font-size:28px;'>🐝 YAMB</h1>
-        <p style='font-size:14px;'>Expertise Apicole du Sénégal</p>
-    </div>
-    <div class='logo-container'>
-        <img src="https://images.unsplash.com/photo-1589648751789-c87882269550?q=80&w=100&auto=format&fit=crop" width="60" style="border-radius:50%;">
+    <div class='premium-header'>
+        <h1 style='margin:0; font-weight:900;'>YAMB</h1>
+        <p style='margin:0; opacity:0.8; font-size:12px;'>ABEILLES DU SÉNÉGAL • INTELLIGENCE CONNECTÉE</p>
     </div>
     """, unsafe_allow_html=True)
 
 loc = get_geolocation()
 
 if loc:
-    lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
-
-    # --- 2. TABLEAU DE BORD ALVÉOLAIRE (Hexagones) ---
-    st.markdown("<h4 style='text-align:center; color:#1B5E20;'>📊 État du Rucher</h4>", unsafe_allow_html=True)
-    st.markdown(f"""
-        <div class='hex-container'>
-            <div class='hex-card'>
-                <span class='hex-icon'>🐝</span>
-                <span class='hex-label'>Activités<br>Abeilles</span>
-            </div>
-            <div class='hex-card'>
-                <span class='hex-icon'>🏠</span>
-                <span class='hex-label'>État<br>Ruches</span>
-            </div>
-            <div class='hex-card'>
-                <span class='hex-icon'>🌸</span>
-                <span class='hex-label'>Flore<br>Mellifère</span>
-            </div>
-            <div class='hex-card'>
-                <span class='hex-icon'>🌡️</span>
-                <span class='hex-label'>31°C<br>Météo</span>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # --- 3. ACTIONS PRINCIPALES ---
-    st.markdown("### 🛠️ Actions Terrain")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    with st.expander("🐝 **SURVEILLANCE DES ABEILLES**"):
-        st.write("Observation du comportement au trou de vol :")
-        st.select_slider("Intensité de butinage", options=["Faible", "Moyenne", "Forte", "Exceptionnelle"])
-        st.image("https://images.unsplash.com/photo-1559440666-489ca64d852c?q=80&w=400&auto=format&fit=crop", caption="Abeilles en activité")
+    # --- DASHBOARD HEXAGONAL ---
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("""<div class='alveole-card'><span style='font-size:30px;'>🐝</span><br><span class='alveole-title'>ACTIVITÉ</span></div>""", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("""<div class='alveole-card'><span style='font-size:30px;'>🏠</span><br><span class='alveole-title'>RUCHERS</span></div>""", unsafe_allow_html=True)
+    with c2:
+        st.markdown("""<div class='alveole-card'><span style='font-size:30px;'>🌸</span><br><span class='alveole-title'>FLORE</span></div>""", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("""<div class='alveole-card'><span style='font-size:30px;'>🛰️</span><br><span class='alveole-title'>ZONE 5KM</span></div>""", unsafe_allow_html=True)
 
-    with st.expander("🌸 **ANALYSE DE LA FLORE**"):
-        st.write("Cochez les ressources disponibles dans les 5 km :")
-        st.checkbox("🌳 Anacardier (Dahaba)")
-        st.checkbox("🌳 Manguier (Mango)")
-        st.checkbox("🌿 Flore Sauvage")
+    # --- CARTE SATELLITE ---
+    st.markdown("### 📍 Localisation Stratégique")
+    lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
+    
+    # Choix du style de carte selon le mode
+    m = folium.Map(location=[lat, lon], zoom_start=14)
+    folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
+    
+    # Zone de butinage (3km vert, 5km orange)
+    folium.Circle([lat, lon], radius=3000, color='#2E7D32', fill=True, opacity=0.1).add_to(m)
+    folium.Circle([lat, lon], radius=5000, color='#FF8F00', fill=False, dash_array='10').add_to(m)
+    folium.Marker([lat, lon], icon=folium.Icon(color='green', icon='bolt', prefix='fa')).add_to(m)
+    
+    st_folium(m, width="100%", height=350)
 
-    with st.expander("📍 **CARTE SATELLITE**"):
-        m = folium.Map(location=[lat, lon], zoom_start=14)
-        folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-        folium.Circle([lat, lon], radius=3000, color='green', fill=True, opacity=0.1).add_to(m)
-        folium.Marker([lat, lon], icon=folium.Icon(color='green', icon='home')).add_to(m)
-        st_folium(m, width=320, height=300)
-
-    # --- PIED DE PAGE ---
+    # --- ACTIONS ---
     st.markdown("---")
-    if st.button("💾 ENREGISTRER LE RAPPORT YAMB"):
+    if st.button("📊 GÉNÉRER LE RAPPORT D'EXPERTISE"):
         st.balloons()
-        st.success("Rapport d'expertise transmis à Abeilles du Sénégal.")
+        st.success("Expertise enregistrée sous le numéro : YAMB-2025-SN")
 
 else:
     st.markdown("""
-        <div style='text-align:center; padding:50px;'>
-            <h1 style='font-size:80px;'>🐝</h1>
-            <p><b>YAMB active ses capteurs...</b></p>
-            <p style='font-size:12px;'>Veuillez accepter la localisation pour l'expert.</p>
+        <div style='text-align:center; padding:100px;'>
+            <h2 style='color:#1B5E20;'>🛰️ Synchronisation...</h2>
+            <p>YAMB prépare votre environnement de travail.</p>
         </div>
     """, unsafe_allow_html=True)
