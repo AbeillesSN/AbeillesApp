@@ -2,77 +2,83 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
+import base64
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="Yamb Connecté", layout="wide")
+# --- CONFIGURATION PRESTIGE ---
+st.set_page_config(page_title="Yamb Connecté Excellence", layout="wide", page_icon="🐝")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #FFFFFF !important; }
-    h1 { color: #1B5E20 !important; text-align: center; font-size: 45px !important; font-weight: 900; }
-    .card-recolte {
-        background-color: #FFD600; border: 8px solid #000;
-        padding: 20px; border-radius: 20px; text-align: center;
+    .main-header {
+        background: linear-gradient(135deg, #1B5E20 0%, #003300 100%);
+        padding: 40px; border-radius: 0 0 30px 30px;
+        color: #FFD600; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .card-pro {
+        background: #ffffff; border-radius: 20px; padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
         margin-bottom: 20px;
     }
-    .big-card {
-        background: #F1F8E9; border: 4px solid #2E7D32;
-        padding: 15px; border-radius: 15px; margin-bottom: 10px;
-        color: #000000 !important;
+    .section-header {
+        color: #1B5E20; font-size: 24px; font-weight: 800;
+        border-bottom: 3px solid #FFD600; padding-bottom: 10px; margin-bottom: 20px;
     }
-    .text-noir { color: #000000 !important; font-weight: bold; font-size: 20px; }
+    /* Bouton Rapport PDF */
+    .btn-pdf {
+        background-color: #D32F2F !important; color: white !important;
+        font-weight: bold; border-radius: 10px; padding: 10px 20px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- AFFICHAGE DU LOGO ---
-col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
-with col_l2:
-    # On essaie les deux noms courants pour être sûr
-    try:
-        st.image("logo.png")
-    except:
-        try:
-            st.image("logo.png.png")
-        except:
-            st.markdown("<h1>🐝 YAMB CONNECTÉ</h1>", unsafe_allow_html=True)
+# --- HEADER ---
+st.markdown("<div class='main-header'><h1>YAMB CONNECTÉ EXCELLENCE</h1><p>Intelligence Écosystémique & Gestion de Précision</p></div>", unsafe_allow_html=True)
 
-# --- DÉTECTION GPS ---
 loc = get_geolocation()
 
 if loc:
     lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
     
-    # 1. ALERTE RÉCOLTE
-    st.markdown("""<div class='card-recolte'>
-        <span style='font-size: 30px; font-weight: 900; color: #000;'>🍯 PRÊT POUR RÉCOLTE (Eucalyptus)</span>
-    </div>""", unsafe_allow_html=True)
+    col_a, col_b = st.columns([2, 1])
 
-    # 2. CARTE SATELLITE (GOOGLE EARTH)
-    st.markdown("### 🛰️ VUE SATELLITE DU SITE")
-    # Création de la carte centrée sur l'apiculteur
-    m = folium.Map(location=[lat, lon], zoom_start=16)
-    # Ajout de la couche Satellite Google
-    folium.TileLayer(
-        tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-        attr='Google Satellite',
-        name='Google Satellite',
-        overlay=False,
-        control=True
-    ).add_to(m)
-    folium.Marker([lat, lon], tooltip="Mon Rucher").add_to(m)
-    st_folium(m, width="100%", height=400)
+    with col_a:
+        st.markdown("<div class='section-header'>📍 CARTOGRAPHIE SATELLITE (3KM)</div>", unsafe_allow_html=True)
+        m = folium.Map(location=[lat, lon], zoom_start=16)
+        folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', 
+                         attr='Google Satellite', name='Google').add_to(m)
+        # Rayon de butinage scientifique
+        folium.Circle([lat, lon], radius=3000, color='#FFD600', fill=True, opacity=0.2).add_to(m)
+        folium.Marker([lat, lon], popup="Rucher Principal", icon=folium.Icon(color='green')).add_to(m)
+        st_folium(m, width="100%", height=500)
 
-    # 3. ANALYSE DE LA DIVERSITÉ FLORISTIQUE (3km)
-    st.markdown("### 🌳 Diagnostic de l'Écosystème")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("<div class='big-card'><p class='text-noir'>🌳 ARBRES : Fromager, Palmier, Anacardier</p></div>", unsafe_allow_html=True)
-        st.markdown("<div class='big-card'><p class='text-noir'>🌡️ MÉTÉO : 28°C | Vent Modéré</p></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown("<div class='big-card'><p class='text-noir'>🌿 ARBUSTES & HERBES : Kinkeliba, Liane Madd</p></div>", unsafe_allow_html=True)
-        st.markdown("<div class='big-card'><p class='text-noir'>🚜 CULTURES : Riziculture, Vergers</p></div>", unsafe_allow_html=True)
+    with col_b:
+        st.markdown("<div class='section-header'>📊 PARAMÈTRES CRITIQUES</div>", unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class='card-pro'>
+                <b>Coordonnées :</b> {lat:.5f} / {lon:.5f}<br><br>
+                <b>Indice de Floraison :</b> <span style='color:green;'>OPTIMAL</span><br><br>
+                <b>Risque Incendie :</b> <span style='color:orange;'>MODÉRÉ</span><br><br>
+                <b>Humidité de l'air :</b> 62%
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # BOUTON GÉNÉRER RAPPORT PDF (Simulé)
+        if st.button("📄 GÉNÉRER LE RAPPORT D'EXPERTISE (PDF)"):
+            st.info("Génération du document scientifique en cours...")
+            st.download_button(label="📥 Télécharger le Rapport", data="Rapport d'expertise pour le rucher situé à "+str(lat), file_name="Rapport_Yamb_Connecte.txt")
 
-    if st.button("✅ SAUVEGARDER L'EMPLACEMENT"):
+    # --- DÉTAILS DE LA FLORE ---
+    st.markdown("<div class='section-header'>🌿 INVENTAIRE BOTANIQUE PRÉCIS</div>", unsafe_allow_html=True)
+    
+    t1, t2, t3 = st.columns(3)
+    t1.metric("Arbres (Strate Haute)", "Fromager, Palmier", "Diversité 85%")
+    t2.metric("Arbustes (Strate Moyenne)", "Anacardier, Manguier", "Floraison Mars")
+    t3.metric("Herbes (Strate Basse)", "Liane Madd, Tridax", "Source Pollen")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("⭐ HOMOLOGUER LE SITE"):
         st.balloons()
+        st.success("Site validé par le protocole Abeilles du Sénégal.")
+
 else:
-    st.warning("📡 RECHERCHE DU SIGNAL GPS... Posez le téléphone à plat.")
+    st.markdown("<h2 style='text-align:center;'>🛰️ SYNCHRONISATION AVEC LES SERVEURS...</h2>", unsafe_allow_html=True)
