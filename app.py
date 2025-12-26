@@ -4,70 +4,46 @@ from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 import urllib.parse
 
-# --- CONFIGURATION ET STYLE ---
-st.set_page_config(page_title="YAMB - Abeilles du Sénégal", layout="centered")
+# --- FONCTION AUDIO (Text-to-Speech) ---
+def parler(texte):
+    composant_audio = f"""
+        <script>
+        var msg = new SpeechSynthesisUtterance("{texte}");
+        msg.lang = 'fr-FR';
+        window.speechSynthesis.speak(msg);
+        </script>
+    """
+    st.components.v1.html(composant_audio, height=0)
 
-st.markdown("""
-    <style>
-    .main-header {
-        background: linear-gradient(135deg, #1B5E20 0%, #051A07 100%);
-        color: #FFC107;
-        padding: 20px;
-        border-radius: 0 0 30px 30px;
-        text-align: center;
-        border-bottom: 4px solid #FF8F00;
-        margin-bottom: 20px;
-    }
-    .whatsapp-btn {
-        background-color: #25D366;
-        color: white !important;
-        padding: 15px;
-        border-radius: 10px;
-        text-decoration: none;
-        display: block;
-        text-align: center;
-        font-weight: bold;
-        margin-top: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# --- CONFIGURATION ---
+st.set_page_config(page_title="YAMB - Audio", layout="centered")
 
-st.markdown("<div class='main-header'><h1>🐝 YAMB</h1><p>UNITÉ D'ÉLITE APICOLE</p></div>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#1B5E20;'>🐝 YAMB AUDIO</h1>", unsafe_allow_html=True)
 
-# --- NAVIGATION ---
-tabs = st.tabs(["📊 IA & Flore", "📸 Photo", "🚨 SOS WhatsApp", "📍 Carte"])
+tabs = st.tabs(["📊 IA", "📸 Photo", "🚨 SOS"])
 
 with tabs[0]:
-    st.subheader("🤖 Estimation IA")
+    if st.button("🔊 ÉCOUTER LES CONSIGNES (IA)"):
+        parler("Bienvenue sur Yambe. Indiquez le nombre de ruches pour calculer votre récolte de miel.")
+    
+    st.subheader("Estimation de Récolte")
     nb = st.number_input("Nombre de ruches :", min_value=1, value=10)
-    st.info(f"Rendement moyen estimé : {nb * 12} kg de miel.")
+    st.success(f"Récolte : {nb * 12} kg")
 
 with tabs[1]:
-    st.subheader("📸 Photo Terrain")
-    st.camera_input("Prendre une photo de contrôle")
+    if st.button("🔊 ÉCOUTER LES CONSIGNES (PHOTO)"):
+        parler("Appuyez sur le bouton de l'appareil photo pour prendre une image de votre ruche ou d'une plante.")
+    
+    st.subheader("Prendre une Photo")
+    st.camera_input("Capture terrain")
 
 with tabs[2]:
-    st.subheader("🚨 Alerte Urgence")
-    danger = st.selectbox("Nature du danger :", ["Incendie 🔥", "Vol 🥷", "Maladie 🐝"])
+    if st.button("🔊 ÉCOUTER LES CONSIGNES (URGENCE)"):
+        parler("En cas de danger, incendie ou vol, choisissez le type d'alerte et appuyez sur le gros bouton vert pour prévenir le groupe WhatsApp.")
     
-    # Message WhatsApp
-    msg = f"ALERTE SOS YAMB : {danger} détecté sur le rucher."
-    encoded_msg = urllib.parse.quote(msg)
-    whatsapp_url = f"https://wa.me/?text={encoded_msg}"
+    st.subheader("Alerte SOS")
+    danger = st.selectbox("Danger :", ["Incendie 🔥", "Vol 🥷", "Maladie 🐝"])
     
-    st.markdown(f'<a href="{whatsapp_url}" target="_blank" class="whatsapp-btn">🟢 ENVOYER SUR WHATSAPP</a>', unsafe_allow_html=True)
-
-with tabs[3]:
-    st.subheader("📍 Géolocalisation")
-    loc = get_geolocation()
-    if loc:
-        lat = loc['coords']['latitude']
-        lon = loc['coords']['longitude']
-        m = folium.Map(location=[lat, lon], zoom_start=15)
-        folium.Marker([lat, lon], tooltip="Votre position").add_to(m)
-        st_folium(m, width="100%", height=300)
-    else:
-        st.warning("📡 Recherche du signal GPS... (Vérifiez vos permissions)")
-
-st.divider()
-st.caption("YAMB v1.1 - Abeilles du Sénégal")
+    msg = f"ALERTE SOS YAMB : {danger} détecté."
+    whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(msg)}"
+    st.markdown(f'<a href="{whatsapp_url}" target="_blank" style="background-color:#25D366; color:white; padding:15px; border-radius:10px; text-decoration:none; display:block; text-align:center; font-weight:bold;">🟢 SIGNALER SUR WHATSAPP</a>', unsafe_allow_html=True)
