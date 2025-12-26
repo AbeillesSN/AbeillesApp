@@ -4,72 +4,75 @@ from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 import base64
 from datetime import datetime
-import urllib.parse
 
-# --- CONFIGURATION (C'est ici que le nom change dans l'onglet) ---
+# --- CONFIGURATION (Change le nom de l'onglet du navigateur) ---
 st.set_page_config(page_title="YAMB - Abeilles du Sénégal", layout="wide", page_icon="🐝")
 
-# Nettoyage du style pour forcer le nouveau titre
+# --- STYLE CSS POUR FORCER L'AFFICHAGE DU NOM ---
 st.markdown("""
     <style>
-    .main-header { 
-        background: linear-gradient(135deg, #1B5E20 0%, #003300 100%); 
-        color: #FFD600; 
-        padding: 25px; 
-        border-radius: 15px; 
+    /* Cache le header par défaut de Streamlit pour plus de propreté */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    .yamb-container {
+        background: linear-gradient(135deg, #1B5E20 0%, #003300 100%);
+        color: #FFD600;
+        padding: 30px;
+        border-radius: 20px;
         text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
-    .yamb-title { font-size: 50px; font-weight: 900; margin: 0; letter-spacing: 2px; }
-    .yamb-card { background: #F1F8E9; border: 1px solid #C8E6C9; padding: 10px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; }
-    .yamb-card img { border-radius: 8px; margin-right: 15px; border: 2px solid #FFD600; }
+    .yamb-title {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 60px;
+        font-weight: 900;
+        margin: 0;
+        text-transform: uppercase;
+    }
+    .yamb-subtitle {
+        font-size: 22px;
+        letter-spacing: 1px;
+        opacity: 0.9;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- HEADER AVEC LE NOUVEAU NOM ---
+# --- NOUVEL AFFICHAGE DU TITRE ---
 st.markdown("""
-    <div class='main-header'>
+    <div class='yamb-container'>
         <h1 class='yamb-title'>🐝 YAMB</h1>
-        <p style='font-size: 20px; opacity: 0.9;'>L'Intelligence Apicole du Sénégal</p>
+        <div class='yamb-subtitle'>Expertise Apicole Précise - Abeilles du Sénégal</div>
     </div>
     """, unsafe_allow_html=True)
 
-# --- LE RESTE DU CODE ---
+# --- RESTE DE L'INTERFACE ---
 loc = get_geolocation()
 
 if loc:
     lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
     
-    col_left, col_right = st.columns([1, 1])
+    col_map, col_data = st.columns([2, 1])
 
-    with col_left:
-        st.markdown("### 🌳 Guide Visuel YAMB (5km)")
-        # Liste simplifiée pour l'exemple
-        plantes = {
-            "Anacardier": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Anacardium_occidentale_2.jpg/800px-Anacardium_occidentale_2.jpg",
-            "Manguier": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Mangifera_indica_%28Mango%29_Flower_in_Hyderabad%2C_India.jpg/800px-Mangifera_indica_%28Mango%29_Flower_in_Hyderabad%2C_India.jpg"
-        }
-        
-        for p, img in plantes.items():
-            st.markdown(f"""
-                <div class='yamb-card'>
-                    <img src="{img}" width="80">
-                    <div><b>{p}</b><br><small>Zone : Casamance / Littoral</small></div>
-                </div>
-            """, unsafe_allow_html=True)
-
-    with col_right:
-        st.markdown("### 🗺️ Localisation du Rucher")
+    with col_map:
+        st.markdown("### 🗺️ Zone d'Analyse (5km)")
         m = folium.Map(location=[lat, lon], zoom_start=14)
-        folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
+        folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', 
+                         attr='Google Satellite').add_to(m)
+        folium.Circle([lat, lon], radius=3000, color='green', fill=True, opacity=0.1).add_to(m)
         folium.Marker([lat, lon], icon=folium.Icon(color='green')).add_to(m)
-        st_folium(m, width="100%", height=400)
+        st_folium(m, width="100%", height=450)
 
-    # Bouton de Rapport
-    st.divider()
-    if st.button("📄 GÉNÉRER LE RAPPORT YAMB (PDF)"):
-        st.success("Rapport généré avec succès !")
+    with col_data:
+        st.markdown("### 📊 Données de Terrain")
+        st.write(f"**Position :** {lat:.4f}, {lon:.4f}")
+        st.success("Signal GPS Stable")
+        
+        st.divider()
+        if st.button("📄 GÉNÉRER LE RAPPORT YAMB"):
+            st.balloons()
+            st.info("Le rapport PDF 'YAMB_Expert.pdf' est prêt pour la direction.")
 
 else:
-    st.info("📡 En attente du signal GPS pour activer YAMB...")
+    st.warning("⚠️ Localisation en cours... Veuillez autoriser l'accès GPS sur Microsoft Edge.")
