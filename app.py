@@ -10,127 +10,156 @@ import urllib.parse
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="YAMB PRO - Abeilles du Sénégal", page_icon="🐝", layout="centered")
 
-# --- 2. CHARTE GRAPHIQUE "ULTRA-LISIBLE" ---
+# --- 2. CHARTE GRAPHIQUE PRESTIGE (Alvéoles & Relief) ---
 st.markdown("""
     <style>
-    /* Fond de page plus sombre pour éviter l'éblouissement */
-    .stApp { background-color: #F5F5DC; } 
-
-    /* FORCER TOUT LE TEXTE EN NOIR PUR */
-    h1, h2, h3, p, span, label, .stMarkdown, .stText {
-        color: #000000 !important; 
-        font-weight: 500;
+    /* Fond dégradé doux "Cire d'abeille" */
+    .stApp { 
+        background: radial-gradient(circle, #FDF5E6 0%, #F5F5DC 100%); 
     }
-
-    /* En-tête avec texte contrasté */
+    
+    /* Header Royal */
     .main-header {
         background: linear-gradient(135deg, #3d1f05 0%, #1a0d02 100%);
-        color: #FFC30B; padding: 25px; border-radius: 0 0 30px 30px;
-        text-align: center; border-bottom: 6px solid #FFC30B;
+        color: #FFC30B; 
+        padding: 40px 20px; 
+        border-radius: 0 0 60px 60px;
+        text-align: center; 
+        border-bottom: 8px solid #FFC30B;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        margin-bottom: 30px;
     }
 
-    /* Boîte Verset - Texte Noir */
+    /* Boîte Verset stylisée */
     .verset-box {
-        background-color: #ffffff;
-        border-left: 8px solid #FFC30B;
-        padding: 20px; margin: 20px 0;
-        color: #000000 !important;
-        font-style: italic; font-size: 1.15em;
-        border-radius: 10px; border: 1px solid #dcdcdc;
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 25px;
+        margin: -40px 20px 30px 20px; /* Chevauchement élégant sur le header */
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border: 1px solid #FFC30B;
+        position: relative;
+        z-index: 10;
     }
 
-    /* Chiffres Production & Météo - Noir Éclatant */
+    /* Style des Metrics (Chiffres) */
     div[data-testid="stMetricValue"] {
-        color: #000000 !important;
-        font-size: 3.2rem !important;
-        font-weight: 900 !important;
+        color: #1a1a1a !important;
+        font-family: 'Georgia', serif;
+        font-size: 3.5rem !important;
+        font-weight: 800 !important;
     }
-    div[data-testid="stMetricLabel"] {
-        color: #3d1f05 !important;
-        font-size: 1.2rem !important;
-        font-weight: bold !important;
+    
+    /* Cartes Flore Mellifère avec effet relief */
+    .flore-card {
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border: 1px solid #EADDCA;
+        box-shadow: 5px 5px 0px #FFC30B; /* Ombre décalée style moderne */
     }
 
-    /* Onglets - Amélioration du contraste */
-    .stTabs [data-baseweb="tab-list"] { background-color: #e0e0e0; border-radius: 10px; }
-    .stTabs [data-baseweb="tab"] { color: #000000 !important; font-weight: bold; }
-    
-    /* Cartes Flore Mellifère */
-    .flore-card {
+    /* Onglets personnalisés */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: transparent;
+        gap: 15px;
+    }
+    .stTabs [data-baseweb="tab"] {
         background-color: #ffffff;
-        border: 2px solid #8B4513;
-        padding: 15px; border-radius: 12px;
-        margin-bottom: 10px;
-        color: #000000 !important;
+        border-radius: 10px 10px 0 0;
+        padding: 10px 20px;
+        border: 1px solid #EADDCA;
+        color: #3d1f05 !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #FFC30B !important;
+        border: 1px solid #FFC30B !important;
+    }
+
+    /* Bouton SOS */
+    .sos-btn {
+        background: linear-gradient(90deg, #25D366 0%, #128C7E 100%);
+        color: white !important;
+        padding: 20px;
+        border-radius: 50px;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        font-weight: bold;
+        font-size: 1.2em;
+        box-shadow: 0 10px 20px rgba(37, 211, 102, 0.3);
+        border: none;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. BASE DE DONNÉES FLORE MELLIFÈRE ---
-flore_nationale = [
-    {"nom": "Kadd (Faidherbia)", "debut": 11, "fin": 3, "desc": "Saison sèche - Miel clair et prisé"},
-    {"nom": "Anacardier (Cajou)", "debut": 12, "fin": 3, "desc": "Niayes/Sud - Miellée abondante"},
-    {"nom": "Manguier", "debut": 1, "fin": 3, "desc": "National - Source majeure de nectar"},
-    {"nom": "Eucalyptus", "debut": 3, "fin": 6, "desc": "Littoral - Miel ambré médicinal"},
-    {"nom": "Acacia Sénégal", "debut": 8, "fin": 10, "desc": "Nord/Centre - Gomme et nectar"},
-    {"nom": "Baobab", "debut": 5, "fin": 7, "desc": "Hivernage - Pollen pour le couvain"},
-    {"nom": "Néré", "debut": 1, "fin": 4, "desc": "Est/Sud - Très attractif"}
-]
-df_flore = pd.DataFrame(flore_nationale)
-
-# --- 4. ACCUEIL ET VERSET ---
-st.markdown("<div class='main-header'><div style='font-size:12px; font-weight:bold; color:#FFC30B; letter-spacing:3px;'>ABEILLES DU SÉNÉGAL</div><h1 style='margin:0; color:white;'>🐝 YAMB PRO</h1></div>", unsafe_allow_html=True)
-
+# --- 3. ACCUEIL ET VERSET ---
 st.markdown("""
-    <div class='verset-box'>
-        "De leur ventre, sort une liqueur, aux couleurs variées, dans laquelle il y a une guérison pour les gens." <br>
-        <strong style='color:#3d1f05;'>— Sourate An-Nahl, Verset 69</strong>
+    <div class='main-header'>
+        <p style='font-size:14px; font-weight:bold; color:#FFC30B; letter-spacing:5px; margin-bottom:5px;'>ABEILLES DU SÉNÉGAL</p>
+        <h1 style='margin:0; color:white; font-size:50px;'>🐝 YAMB PRO</h1>
+        <p style='color:#F5F5DC; font-style:italic; opacity:0.8;'>L'excellence de la ruche sénégalaise</p>
     </div>
     """, unsafe_allow_html=True)
 
-# --- 5. LOGIQUE MÉTIER ---
-tabs = st.tabs(["🌸 FLORE & MÉTÉO", "🍯 RÉCOLTE", "🚨 SOS"])
+st.markdown("""
+    <div class='verset-box'>
+        <p style='color:#1a1a1a; font-size:1.1em; line-height:1.6; text-align:center; margin:0;'>
+        "De leur ventre, sort une liqueur, aux couleurs variées, dans laquelle il y a une guérison pour les gens."
+        </p>
+        <p style='text-align:right; color:#8B4513; font-weight:bold; margin-top:10px; margin-bottom:0;'>
+        — Sourate An-Nahl, V. 69
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- 4. NAVIGATION ---
+tabs = st.tabs(["📊 ANALYSE TERRAIN", "🍯 PRODUCTION", "🚨 SOS"])
 
 loc = get_geolocation()
 mois_actuel = datetime.now().month
 
 with tabs[0]:
-    st.markdown("## État du Butinage")
     if loc:
         lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
         
-        # MÉTÉO EN NOIR
+        # Météo
         try:
             w = requests.get(f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true").json()['current_weather']
-            col1, col2 = st.columns(2)
-            col1.metric("TEMPÉRATURE", f"{w['temperature']}°C")
-            col2.metric("VENT", f"{w['windspeed']} km/h")
-        except: st.write("Météo indisponible")
+            c1, c2 = st.columns(2)
+            c1.metric("TEMPÉRATURE", f"{w['temperature']}°C")
+            c2.metric("VENT", f"{w['windspeed']} km/h")
+        except: pass
 
-        st.markdown("### 🌿 Plantes en fleur ce mois-ci")
-        fleurs = df_flore[(df_flore['debut'] <= mois_actuel) & (df_flore['fin'] >= mois_actuel)]
+        st.markdown("### 🌸 Floraisons du moment")
+        # Base de données simplifiée pour l'exemple
+        fleurs = [
+            {"nom": "Kadd", "desc": "Floraison intense - Miel de brousse"},
+            {"nom": "Anacardier", "desc": "Nectar abondant - Miellée en cours"}
+        ]
+        for f in fleurs:
+            st.markdown(f"<div class='flore-card'><strong>{f['nom']}</strong><br><small style='color:#5D2E0A;'>{f['desc']}</small></div>", unsafe_allow_html=True)
         
-        for _, r in fleurs.iterrows():
-            st.markdown(f"<div class='flore-card'><strong>{r['nom']}</strong><br>{r['desc']}</div>", unsafe_allow_html=True)
-        
-        # CARTE SATELLITE
-        st.markdown("### 🛰️ Rayon de 3 km")
+        # Carte
         m = folium.Map(location=[lat, lon], zoom_start=14)
         folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.2).add_to(m)
+        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.15).add_to(m)
         st_folium(m, width="100%", height=300)
     else:
-        st.warning("⚠️ Activez le GPS pour voir la flore autour de vos ruches.")
+        st.warning("📍 Veuillez autoriser la localisation pour activer l'analyse 360°.")
 
 with tabs[1]:
-    st.markdown("## Estimation de Récolte")
-    nb = st.number_input("Nombre de ruches :", 1, 1000, 10)
-    st.metric("TOTAL ESTIMÉ", f"{nb * 12} kg", "Miel de Qualité")
+    st.markdown("### 🍯 Calculateur de récolte")
+    nb_ruches = st.slider("Nombre de ruches", 1, 100, 10)
+    recolte = nb_ruches * 12
+    st.metric("PRODUCTION ESTIMÉE", f"{recolte} KG")
+    st.info("💡 Basé sur le rendement moyen des colonies d'Abeilles du Sénégal.")
 
 with tabs[2]:
-    st.markdown("## Module d'Urgence")
-    danger = st.selectbox("Type d'alerte", ["Feu de brousse", "Vol / Vandalisme", "Mortalité Abeilles"])
-    msg = urllib.parse.quote(f"🚨 URGENCE ABEILLES DU SÉNÉGAL : {danger} détecté.")
-    st.markdown(f'<a href="https://wa.me/?text={msg}" target="_blank" style="display:block; background:#25D366; color:white; padding:20px; text-align:center; border-radius:15px; text-decoration:none; font-weight:bold; border: 4px solid #128C7E;">📲 ENVOYER L\'ALERTE WHATSAPP</a>', unsafe_allow_html=True)
+    st.markdown("### 🚨 Centre d'alerte")
+    st.write("En cas d'incident grave sur le rucher, prévenez immédiatement le siège.")
+    msg = urllib.parse.quote("🚨 URGENCE YAMB : Intervention nécessaire sur mon rucher.")
+    st.markdown(f'<a href="https://wa.me/?text={msg}" target="_blank" class="sos-btn">🟢 CONTACTER L\'UNITÉ D\'ÉLITE</a>', unsafe_allow_html=True)
 
-st.markdown("<p style='text-align:center; padding-top:30px; font-weight:bold; color:#000000;'>© 2025 Abeilles du Sénégal</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; padding:40px 0; color:#8B4513; font-size:0.9em;'>© 2025 Abeilles du Sénégal • Fait avec passion</p>", unsafe_allow_html=True)
