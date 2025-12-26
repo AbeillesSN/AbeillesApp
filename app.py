@@ -3,116 +3,89 @@ import pandas as pd
 import os
 from datetime import datetime
 from streamlit_js_eval import get_geolocation
-from streamlit_folium import st_folium
-import folium
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="Yamb Connecté", layout="wide")
+# --- CONFIGURATION FINALE ---
+st.set_page_config(page_title="Yamb Connecté - Expert", layout="wide")
 
-# CSS : DÉCOR NATURE & CONTRASTE MAXIMUM
 st.markdown("""
     <style>
-    /* Fond avec rappel de la nature */
-    .stApp { 
-        background-color: #ffffff; 
-        background-image: url('https://www.transparenttextures.com/patterns/leaf.png');
-    }
+    .stApp { background-color: #FFFFFF !important; }
+    h1 { color: #1B5E20 !important; text-align: center; font-size: 50px !important; font-weight: 900; }
     
-    /* Titre Géant */
-    h1 { color: #2e7d32 !important; text-align: center; font-size: 65px !important; font-weight: 900; margin-bottom: 0px; }
-    .sub { text-align: center; color: #5d4037; font-size: 25px; font-weight: bold; margin-bottom: 30px; }
-
-    /* Cartes Visuelles (Flore Casamance) */
-    .nature-card {
-        background: #ffffff;
-        border: 8px solid #2e7d32; /* Vert forêt */
-        padding: 20px;
-        margin: 10px;
+    /* Carte d'Alerte Récolte Clignotante */
+    .harvest-alert {
+        background-color: #FFD600;
+        border: 10px solid #000;
+        padding: 25px;
         border-radius: 30px;
         text-align: center;
-        box-shadow: 10px 10px 0px #f1c40f; /* Ombre jaune miel */
+        animation: blinker 1.5s linear infinite;
     }
-    
-    .label-visuel { font-size: 35px; font-weight: 900; color: #000000; display: block; }
-    .emoji-geant { font-size: 70px; display: block; }
+    @keyframes blinker { 50% { opacity: 0.6; } }
 
-    /* BOUTON D'ACTION (Gros et Jaune) */
-    .stButton>button {
-        height: 150px !important;
-        background-color: #f1c40f !important;
-        color: #000000 !important;
-        font-size: 40px !important;
-        font-weight: 900 !important;
-        border: 8px solid #5d4037 !important;
-        border-radius: 40px !important;
-        box-shadow: 0px 10px 20px rgba(0,0,0,0.3);
-    }
+    .card { background: #F1F8E9; border: 4px solid #2E7D32; padding: 15px; border-radius: 20px; margin-bottom: 15px; }
+    .titre { font-size: 24px; font-weight: 900; color: #1B5E20; text-decoration: underline; }
+    .info { font-size: 22px; font-weight: bold; color: #000; }
     
-    /* Alerte Rouge pour les Feux */
-    .alerte-feu {
-        background-color: #ff0000;
-        color: #ffffff;
-        padding: 20px;
-        font-size: 40px;
-        text-align: center;
-        font-weight: 900;
-        border-radius: 20px;
-        border: 5px solid #000000;
+    .stButton>button {
+        height: 100px !important; background-color: #000 !important; color: #FFF !important;
+        font-size: 30px !important; font-weight: 900 !important; border-radius: 30px !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- BASE DE DONNÉES VISUELLE ---
-FLORE_CASAMANCE = {
-    "Arbres": "🌳 Anacardier, Manguier, Palmier",
-    "Fleurs": "🌸 Floraison : Mars à Juin",
-    "Eau": "💧 Rivières et Bolongs",
-    "Feu": "🔥 ATTENTION AUX FEUX"
+# --- BASE DE DONNÉES IA ---
+DATA_ZONE = {
+    "Niayes": {
+        "miels": "Eucalyptus, Maraîchage",
+        "meteo": "🌡️ 24°C | 🌬️ Vent Fort",
+        "recolte": "✅ PRÊT POUR RÉCOLTE (Fin de floraison Eucalyptus)",
+        "flore": "Eucalyptus, Filaos, Légumes"
+    },
+    "Casamance": {
+        "miels": "Mangrove, Anacardier, Forêt",
+        "meteo": "🌡️ 31°C | 🌧️ Risque Pluie",
+        "recolte": "⏳ ATTENDRE (Floraison Anacardier en cours)",
+        "flore": "Fromager, Palmier, Madd"
+    },
+    "Bassin Arachidier": {
+        "miels": "Kad, Baobab, Mil",
+        "meteo": "🌡️ 36°C | ☀️ Très Sec",
+        "recolte": "🔔 SURVEILLER (Début floraison Kad)",
+        "flore": "Baobab, Kad, Néré"
+    }
 }
 
-# --- EN-TÊTE ---
 st.markdown("<h1>🐝 YAMB CONNECTÉ</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub'>Abeilles du Sénégal - Expertise Casamance</p>", unsafe_allow_html=True)
 
-# --- GÉOLOCALISATION ---
 loc = get_geolocation()
-
 if loc:
     lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
-    
-    # Affichage Visuel des ressources
-    st.markdown("<div style='background:#f1c40f; padding:10px; border-radius:15px; text-align:center; font-size:30px; font-weight:900;'>📍 VOTRE EMPLACEMENT EST PRÊT</div>", unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown(f"""<div class='nature-card'>
-            <span class='emoji-geant'>🌳</span>
-            <span class='label-visuel'>{FLORE_CASAMANCE['Arbres']}</span>
-        </div>""", unsafe_allow_html=True)
-        
-        st.markdown(f"""<div class='nature-card'>
-            <span class='emoji-geant'>📅</span>
-            <span class='label-visuel'>{FLORE_CASAMANCE['Fleurs']}</span>
-        </div>""", unsafe_allow_html=True)
+    z = "Niayes" if lon < -16.8 else "Casamance" if lat < 13.5 else "Bassin Arachidier"
+    d = DATA_ZONE[z]
 
-    with col2:
-        st.markdown(f"""<div class='nature-card'>
-            <span class='emoji-geant'>💧</span>
-            <span class='label-visuel'>{FLORE_CASAMANCE['Eau']}</span>
-        </div>""", unsafe_allow_html=True)
-        
-        st.markdown(f"""<div class='alerte-feu'>
-            {FLORE_CASAMANCE['Feu']}
-        </div>""", unsafe_allow_html=True)
+    # --- MODULE ALERTE RÉCOLTE ---
+    st.markdown(f"""
+        <div class='harvest-alert'>
+            <span style='font-size:40px;'>🍯</span><br>
+            <span style='font-size:30px; font-weight:900; color:#000;'>{d['recolte']}</span>
+        </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Gros bouton de validation
-    if st.button("✅ ENREGISTRER"):
-        st.balloons()
-        st.success("C'EST FAIT ! MERCI.")
-else:
-    st.markdown("<h2 style='text-align:center; color:#3e2723;'>📡 RECHERCHE DU SIGNAL... Posez le téléphone à plat.</h2>", unsafe_allow_html=True)
 
-st.markdown("<p style='text-align:center; margin-top:50px;'>🍯 Abeilles du Sénégal - Protégeons nos forêts.</p>", unsafe_allow_html=True)
+    # --- INFOS COMPLÉMENTAIRES ---
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(f"<div class='card'><span class='titre'>☁️ MÉTÉO DU JOUR</span><br><span class='info'>{d['meteo']}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'><span class='titre'>🍯 TYPES DE MIEL</span><br><span class='info'>{d['miels']}</span></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"<div class='card'><span class='titre'>🌳 ÉCOSYSTÈME</span><br><span class='info'>{d['flore']}</span></div>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:black;'>📸 SCANNER PLANTE</h3>", unsafe_allow_html=True)
+        st.camera_input("")
+
+    if st.button("💾 ENREGISTRER LE SITE"):
+        st.balloons()
+        st.success("Diagnostic complet enregistré !")
+else:
+    st.markdown("<h2 style='text-align:center;'>🛰️ Recherche GPS...</h2>", unsafe_allow_html=True)
