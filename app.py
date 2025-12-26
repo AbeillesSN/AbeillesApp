@@ -7,100 +7,112 @@ from streamlit_folium import st_folium
 import folium
 
 # --- CONFIGURATION ---
-st.set_page_config(page_title="Yamb Connecté", layout="wide", page_icon="🐝")
+st.set_page_config(page_title="Yamb Connecté", layout="wide")
 
-# CSS CORRECTIF POUR LA LISIBILITÉ (Contraste Élevé)
+# CSS : DÉCOR NATURE & CONTRASTE MAXIMUM
 st.markdown("""
     <style>
-    .stApp { background-color: #fdfaf0; }
-    
-    /* Titres en Marron très foncé */
-    h1 { color: #3e2723 !important; text-align: center; font-size: 45px !important; font-weight: bold; }
-    h3 { color: #d35400 !important; text-align: center; font-weight: bold; }
-    
-    /* Correction du texte dans les cartes : NOIR PUR pour la lecture */
-    .info-card { 
-        background: #ffffff; 
-        padding: 20px; 
-        border-radius: 15px; 
-        border: 3px solid #5d4037; 
-        margin: 10px 0px; 
-        text-align: center; 
-        box-shadow: 4px 4px 0px #5d4037;
-    }
-    .icon-label { font-size: 50px; display: block; margin-bottom: 5px; }
-    .text-title { font-size: 22px; font-weight: bold; color: #3e2723; text-decoration: underline; }
-    .text-value { font-size: 20px; font-weight: 900; color: #000000 !important; display: block; margin-top: 10px; }
-    
-    /* Bouton d'aide vocale jaune vif */
-    .stButton>button { 
-        height: 90px; font-size: 22px !important; border-radius: 15px; 
-        background-color: #f1c40f !important; color: #000000 !important; 
-        border: 4px solid #3e2723; font-weight: bold;
+    /* Fond avec rappel de la nature */
+    .stApp { 
+        background-color: #ffffff; 
+        background-image: url('https://www.transparenttextures.com/patterns/leaf.png');
     }
     
-    /* Texte général */
-    .stMarkdown, p, span { color: #000000 !important; font-weight: bold; }
+    /* Titre Géant */
+    h1 { color: #2e7d32 !important; text-align: center; font-size: 65px !important; font-weight: 900; margin-bottom: 0px; }
+    .sub { text-align: center; color: #5d4037; font-size: 25px; font-weight: bold; margin-bottom: 30px; }
+
+    /* Cartes Visuelles (Flore Casamance) */
+    .nature-card {
+        background: #ffffff;
+        border: 8px solid #2e7d32; /* Vert forêt */
+        padding: 20px;
+        margin: 10px;
+        border-radius: 30px;
+        text-align: center;
+        box-shadow: 10px 10px 0px #f1c40f; /* Ombre jaune miel */
+    }
+    
+    .label-visuel { font-size: 35px; font-weight: 900; color: #000000; display: block; }
+    .emoji-geant { font-size: 70px; display: block; }
+
+    /* BOUTON D'ACTION (Gros et Jaune) */
+    .stButton>button {
+        height: 150px !important;
+        background-color: #f1c40f !important;
+        color: #000000 !important;
+        font-size: 40px !important;
+        font-weight: 900 !important;
+        border: 8px solid #5d4037 !important;
+        border-radius: 40px !important;
+        box-shadow: 0px 10px 20px rgba(0,0,0,0.3);
+    }
+    
+    /* Alerte Rouge pour les Feux */
+    .alerte-feu {
+        background-color: #ff0000;
+        color: #ffffff;
+        padding: 20px;
+        font-size: 40px;
+        text-align: center;
+        font-weight: 900;
+        border-radius: 20px;
+        border: 5px solid #000000;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DONNÉES IA TROPICALE ---
-ZONES_IA = {
-    "Niayes": {"flore": "Eucalyptus, Agrumes, Maraîchage", "cal": "Janvier à Mai", "eau": "Céanes / Bassins", "feu": "Risque Faible"},
-    "Casamance": {"flore": "Anacardier, Manguier, Palmier", "cal": "Mars à Juin", "eau": "Rivières / Bolongs", "feu": "Risque Moyen"},
-    "Ferlo": {"flore": "Acacia Sénégal, Siddem", "cal": "Sept à Nov", "eau": "Forages / Abreuvoirs", "feu": "RISQUE TRÈS ÉLEVÉ"},
-    "Bassin Arachidier": {"flore": "Baobab, Kad, Néré", "cal": "Mai à Août", "eau": "Puits profonds", "feu": "Risque Moyen"}
+# --- BASE DE DONNÉES VISUELLE ---
+FLORE_CASAMANCE = {
+    "Arbres": "🌳 Anacardier, Manguier, Palmier",
+    "Fleurs": "🌸 Floraison : Mars à Juin",
+    "Eau": "💧 Rivières et Bolongs",
+    "Feu": "🔥 ATTENTION AUX FEUX"
 }
 
 # --- EN-TÊTE ---
-col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 2, 1])
-with col_logo_2:
-    if os.path.exists("logo.png.png"):
-        st.image("logo.png.png", use_container_width=True)
-    st.markdown("<h1>YAMB CONNECTÉ</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#5d4037; font-size:18px;'>L'IA Apicole par Abeilles du Sénégal</p>", unsafe_allow_html=True)
+st.markdown("<h1>🐝 YAMB CONNECTÉ</h1>", unsafe_allow_html=True)
+st.markdown("<p class='sub'>Abeilles du Sénégal - Expertise Casamance</p>", unsafe_allow_html=True)
 
-if st.button("📢 CLIQUEZ ICI POUR ÉCOUTER (Aide Vocale)"):
-    st.success("Lecture en cours... (Simulé)")
-
-# --- DIAGNOSTIC ---
+# --- GÉOLOCALISATION ---
 loc = get_geolocation()
+
 if loc:
     lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
-    zone = "Niayes" if lon < -16.8 else "Casamance" if lat < 13.5 else "Bassin Arachidier"
-    info = ZONES_IA.get(zone)
-
-    st.markdown(f"<h2 style='text-align:center; color:white; background:#d35400; padding:10px; border-radius:10px;'>📍 ZONE : {zone.upper()}</h2>", unsafe_allow_html=True)
-
-    # GRILLE D'INFORMATION HAUTE LISIBILITÉ
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown(f"""<div class='info-card'>
-            <span class='icon-label'>🌳</span>
-            <span class='text-title'>FLORE (3km)</span>
-            <span class='text-value'>{info['flore']}</span>
-        </div>""", unsafe_allow_html=True)
-        st.markdown(f"""<div class='info-card'>
-            <span class='icon-label'>📅</span>
-            <span class='text-title'>FLORAISON</span>
-            <span class='text-value'>{info['cal']}</span>
-        </div>""", unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""<div class='info-card'>
-            <span class='icon-label'>💧</span>
-            <span class='text-title'>POINTS D'EAU</span>
-            <span class='text-value'>{info['eau']}</span>
-        </div>""", unsafe_allow_html=True)
-        st.markdown(f"""<div class='info-card'>
-            <span class='icon-label'>🔥</span>
-            <span class='text-title'>ALERTE FEU</span>
-            <span class='text-value'>{info['feu']}</span>
-        </div>""", unsafe_allow_html=True)
-
-    st.divider()
     
-    if st.button("✅ ENREGISTRER MA POSITION MAINTENANT"):
+    # Affichage Visuel des ressources
+    st.markdown("<div style='background:#f1c40f; padding:10px; border-radius:15px; text-align:center; font-size:30px; font-weight:900;'>📍 VOTRE EMPLACEMENT EST PRÊT</div>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(f"""<div class='nature-card'>
+            <span class='emoji-geant'>🌳</span>
+            <span class='label-visuel'>{FLORE_CASAMANCE['Arbres']}</span>
+        </div>""", unsafe_allow_html=True)
+        
+        st.markdown(f"""<div class='nature-card'>
+            <span class='emoji-geant'>📅</span>
+            <span class='label-visuel'>{FLORE_CASAMANCE['Fleurs']}</span>
+        </div>""", unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""<div class='nature-card'>
+            <span class='emoji-geant'>💧</span>
+            <span class='label-visuel'>{FLORE_CASAMANCE['Eau']}</span>
+        </div>""", unsafe_allow_html=True)
+        
+        st.markdown(f"""<div class='alerte-feu'>
+            {FLORE_CASAMANCE['Feu']}
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Gros bouton de validation
+    if st.button("✅ ENREGISTRER"):
         st.balloons()
-        st.success("POSITION SAUVEGARDÉE !")
+        st.success("C'EST FAIT ! MERCI.")
 else:
-    st.warning("⚠️ RECHERCHE DU GPS... MERCI DE PATIENTER AU SOLEIL.")
+    st.markdown("<h2 style='text-align:center; color:#3e2723;'>📡 RECHERCHE DU SIGNAL... Posez le téléphone à plat.</h2>", unsafe_allow_html=True)
+
+st.markdown("<p style='text-align:center; margin-top:50px;'>🍯 Abeilles du Sénégal - Protégeons nos forêts.</p>", unsafe_allow_html=True)
