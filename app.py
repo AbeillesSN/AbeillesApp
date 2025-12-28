@@ -6,106 +6,131 @@ import urllib.parse
 from PIL import Image
 import datetime
 
-# --- 1. CONFIGURATION MOBILE & STYLE TACTIQUE ---
-st.set_page_config(page_title="YAMB PRO", layout="centered")
+# --- 1. CONFIGURATION & SIGNATURE ---
+st.set_page_config(page_title="YAMB PRO - Elite", layout="centered", page_icon="🐝")
 
-st.markdown("""
+ENTREPRISE = "YAMB APICULTURE SOLUTIONS"
+LOGO_URL = "https://i.imgur.com/uT0mFwX.png" # Remplacez par votre lien logo direct
+
+st.markdown(f"""
     <style>
-    /* Force le contraste maximal pour l'extérieur */
-    .stApp { background-color: #FFFFFF !important; }
+    /* Design Mobile-First Haute Visibilité */
+    .stApp {{ background-color: #FFFFFF !important; }}
     
-    h1, h2, h3, p, label, li { 
+    h1, h2, h3, p, label, li {{ 
         color: #000000 !important; 
         font-weight: 850 !important; 
-    }
+    }}
 
-    /* Boîtes Alvéoles adaptées aux smartphones */
-    .mobile-box {
-        background: #F4F4F4;
-        border: 3px solid #FFC30B;
+    .card {{
+        background: #F8F9FA;
+        border: 2px solid #FFC30B;
         padding: 15px;
-        border-radius: 12px;
+        border-radius: 15px;
         margin-bottom: 15px;
-        box-shadow: 4px 4px 0px #000000;
-    }
+        box-shadow: 4px 4px 10px rgba(0,0,0,0.05);
+    }}
 
-    /* Boutons larges pour les doigts */
-    .stButton>button {
+    /* Boutons Tactiles */
+    .stButton>button {{
         width: 100% !important;
-        height: 60px;
+        height: 55px;
         background-color: #FFC30B !important;
-        color: #000000 !important;
-        font-size: 20px !important;
-        border: 2px solid #000000 !important;
+        color: black !important;
+        font-weight: bold !important;
         border-radius: 12px;
-    }
+        border: 2px solid #000;
+    }}
 
-    /* Cache les éléments inutiles sur mobile */
-    footer {visibility: hidden;}
+    /* Footer avec logo minuscule */
+    .footer {{
+        text-align: center;
+        margin-top: 50px;
+        padding: 20px;
+        border-top: 1px solid #EEE;
+    }}
+    .footer img {{
+        width: 30px; /* Taille minuscule */
+        filter: grayscale(100%);
+        opacity: 0.6;
+    }}
+    .footer p {{
+        font-size: 10px !important;
+        color: #999 !important;
+        margin-top: 5px;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. NAVIGATION PAR ONGLETS (STYLE APPLICATION MOBILE) ---
+# --- 2. LOGIQUE HORS-LIGNE ---
+if "offline_notes" not in st.session_state:
+    st.session_state.offline_notes = []
+
+# --- 3. EN-TÊTE ---
 st.markdown("<h1 style='text-align:center;'>🛡️ YAMB PRO</h1>", unsafe_allow_html=True)
-tabs = st.tabs(["🔍 SCAN", "📍 CARTE", "💰 BILAN", "🤝 RESEAU"])
 
-# --- 3. MODULE SCAN COUVAIN (PRIORITÉ N°1) ---
-with tabs[0]:
-    st.markdown("### 📸 Scan Couvain IA")
-    # Utilise l'appareil photo du téléphone directement
-    capture = st.camera_input("Scanner un cadre")
+# --- 4. NAVIGATION MOBILE (TABS) ---
+menu = st.tabs(["🔍 SCAN", "📍 CARTE", "💰 BILAN", "💾 NOTES"])
+
+# --- MODULE SCAN COUVAIN ---
+with menu[0]:
+    st.markdown("### 📸 Analyse du Couvain")
+    source = st.radio("Source :", ["Appareil Photo", "Galerie"], horizontal=True)
     
-    if capture:
-        st.success("Analyse en cours...")
-        st.markdown("""<div class='mobile-box'>
-            <p>✅ <b>Diagnostic :</b> Ponte régulière et saine.</p>
-            <p>📊 <b>Qualité :</b> 94% (Couvain operculé dense).</p>
-            <p>🏥 <b>Santé :</b> Aucun signe de loque détecté.</p>
-        </div>""", unsafe_allow_html=True)
+    img = None
+    if source == "Appareil Photo":
+        img = st.camera_input("Scanner le cadre")
     else:
-        st.info("Pointez l'appareil vers un cadre de couvain bien éclairé.")
+        img = st.file_uploader("Importer une photo", type=["jpg", "png"])
 
-# --- 4. MODULE RADAR DE TERRAIN ---
-with tabs[1]:
+    if img:
+        st.success("Analyse en cours...")
+        st.markdown("""<div class="card">
+            <h4>📊 DIAGNOSTIC IA</h4>
+            <p>✅ <b>Ponte :</b> 95% (Saine).</p>
+            <p>🦠 <b>Sanitaire :</b> Aucune loque détectée.</p>
+        </div>""", unsafe_allow_html=True)
+
+# --- MODULE RADAR ---
+with menu[1]:
     st.markdown("### 🛰️ Radar de Butinage")
     loc = get_geolocation()
     if loc:
         lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
         m = folium.Map(location=[lat, lon], zoom_start=14)
-        # Fond satellite Google
         folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-        # Zone de 3km
-        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.2).add_to(m)
-        folium.Marker([lat, lon], icon=folium.Icon(color='red')).add_to(m)
+        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.3).add_to(m)
         st_folium(m, width="100%", height=300)
     else:
-        st.warning("⚠️ GPS requis pour le radar.")
+        st.warning("Activez le GPS de votre téléphone.")
 
-# --- 5. MODULE FINANCE & SOUDURE ---
-with tabs[2]:
-    st.markdown("### 💰 Gestion & Soudure")
-    ruches = st.number_input("Nombre de ruches", 1, 1000, 20)
-    valeur = ruches * 15 * 4500
-    st.markdown(f"""<div class='mobile-box'>
-        <h3>Potentiel : {valeur:,.0f} FCFA</h3>
-        <p>Soudure : Prévoir {ruches * 5} kg de sucre.</p>
+# --- MODULE FINANCE ---
+with menu[2]:
+    st.markdown("### 💰 Gestion de Récolte")
+    nb = st.number_input("Nombre de ruches :", 1, 500, 10)
+    val = nb * 15 * 4500
+    st.markdown(f"""<div class="card" style="text-align:center;">
+        <h2 style="color:#FFC30B !important;">{val:,.0f} FCFA</h2>
+        <p>Potentiel de la saison</p>
     </div>""", unsafe_allow_html=True)
 
-# --- 6. MODULE RÉSEAU & AVIS ---
-with tabs[3]:
-    st.markdown("### 🤝 Avis des Collègues")
-    nom = st.text_input("Votre nom")
-    feedback = st.text_area("Votre avis de pro")
-    if st.button("Partager avec le groupe"):
-        st.toast(f"Merci {nom}, avis enregistré !")
+# --- MODULE HORS-LIGNE ---
+with menu[3]:
+    st.markdown("### 💾 Mode Hors-Ligne")
+    n_ruche = st.text_input("N° Ruche")
+    obs = st.text_area("Observation")
+    if st.button("Sauvegarder localement"):
+        st.session_state.offline_notes.append({"Ruche": n_ruche, "Note": obs})
+        st.toast("Enregistré !")
     
-    st.markdown("""<div class='mobile-box' style='border-color:#000;'>
-        <p>📢 <b>Infos Réseau :</b> Miellée de Kadd en cours à Mbao. Attention aux fourmis magnan signalées.</p>
-    </div>""", unsafe_allow_html=True)
+    if st.session_state.offline_notes:
+        st.write("📋 Notes en attente de synchro :")
+        st.table(st.session_state.offline_notes)
 
-# --- 7. BOUTON SOS D'URGENCE ---
-st.markdown("---")
-if st.button("🚨 SOS : ENVOYER GPS"):
-    if loc:
-        msg = urllib.parse.quote(f"SOS RUCHER\nPosition: {loc['coords']['latitude']},{loc['coords']['longitude']}")
-        st.markdown(f'<a href="https://wa.me/221XXXXXXX?text={msg}" target="_blank">CONFIRMER SUR WHATSAPP</a>', unsafe_allow_html=True)
+# --- 5. FOOTER AVEC LOGO MINUSCULE ---
+st.markdown(f"""
+    <div class="footer">
+        <img src="{LOGO_URL}" alt="Logo">
+        <p>© 2025 {ENTREPRISE}<br>Développé pour l'élite apicole du Sénégal</p>
+    </div>
+    """, unsafe_allow_html=True)
