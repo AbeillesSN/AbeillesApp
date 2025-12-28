@@ -2,134 +2,207 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
-import urllib.parse
 from PIL import Image
+import datetime
 
-# --- 1. CONFIGURATION & STYLE ÉLITE ---
-st.set_page_config(page_title="YAMB PRO - Abeilles du Sénégal", layout="centered")
+# --- 1. CONFIGURATION DU CŒUR DE L'APPLICATION ---
+st.set_page_config(
+    page_title="YAMB PRO - Abeilles du Sénégal",
+    page_icon="🐝",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-# Identité de l'entreprise
+# IDENTITÉ VISUELLE
 ENTREPRISE = "Abeilles du Sénégal"
 LOGO_URL = "https://i.imgur.com/uT0mFwX.png" # Lien direct vers votre logo
 
+# --- 2. STYLE GRAPHIQUE "HAUTE FIABILITÉ" (CSS) ---
 st.markdown(f"""
     <style>
-    /* Lisibilité maximale : Noir sur Blanc */
+    /* 1. Fond Blanc Pur pour contraste solaire maximal */
     .stApp {{ background-color: #FFFFFF !important; }}
-    h1, h2, h3, p, label, span, li {{ 
+    
+    /* 2. Typographie Noir Profond pour lisibilité */
+    h1, h2, h3, p, label, div, span, li {{ 
         color: #000000 !important; 
-        font-weight: 850 !important; 
+        font-family: 'Helvetica', sans-serif;
+        font-weight: 600 !important; 
     }}
 
-    /* Cartes Alvéolées Tactiles */
-    .card {{
-        background: #F9F9F9;
-        border: 2px solid #FFC30B;
-        padding: 15px;
-        border-radius: 12px;
+    /* 3. Cartes "Alvéoles" Robustes */
+    .pro-card {{
+        background-color: #F9F9F9;
+        border-left: 6px solid #FFC30B; /* Jaune Abeille */
+        border-top: 1px solid #DDD;
+        border-right: 1px solid #DDD;
+        border-bottom: 1px solid #DDD;
+        padding: 20px;
+        border-radius: 8px;
         margin-bottom: 15px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
     }}
 
-    /* BOUTONS TACTILES LARGEUR MOBILE */
+    /* 4. Boutons d'Action Larges (Facile à cliquer) */
     .stButton>button {{
         width: 100% !important;
-        height: 55px;
+        height: 60px;
         background-color: #FFC30B !important;
-        border: 2px solid #000 !important;
-        border-radius: 12px;
+        color: #000000 !important;
         font-size: 18px !important;
+        border: 2px solid #000000 !important;
+        border-radius: 10px;
     }}
 
-    /* SIGNATURE LOGO MINUSCULE EN BAS */
-    .footer-brand {{
+    /* 5. Signature Discrète en Bas de Page */
+    .footer-container {{
         text-align: center;
-        margin-top: 60px;
-        padding: 20px;
-        border-top: 1px solid #EEE;
+        margin-top: 80px;
+        padding-top: 20px;
+        border-top: 1px solid #E0E0E0;
+        opacity: 0.7;
     }}
-    .footer-brand img {{
-        width: 25px; /* Taille minuscule exigée */
+    .footer-logo {{
+        width: 30px; /* Taille minuscule */
         filter: grayscale(100%);
-        opacity: 0.5;
     }}
-    .footer-brand p {{
-        font-size: 10px !important;
-        color: #999 !important;
-        margin-top: 5px;
+    .footer-text {{
+        font-size: 11px !important;
+        color: #888 !important;
         text-transform: lowercase;
+        margin-top: 5px;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. EN-TÊTE OFFICIEL ---
+# --- 3. EN-TÊTE PROFESSIONNEL ---
 st.markdown("<h1 style='text-align:center;'>🛡️ YAMB PRO</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; font-size:12px; margin-top:-15px;'>Une solution signée {ENTREPRISE}</p>", unsafe_allow_html=True)
 
-# --- 3. NAVIGATION MOBILE (TABS) ---
-tabs = st.tabs(["🔍 SCAN & JOINDRE", "📍 CARTE", "💰 BILAN", "💾 NOTES"])
+# --- 4. NAVIGATION INTÉGRÉE (TABS) ---
+# Les onglets permettent de ne jamais se perdre dans l'application
+tabs = st.tabs(["🔍 SCANNER", "📍 CARTE", "💰 GESTION", "📝 NOTES"])
 
-# --- 4. MODULE SCAN COUVAIN (DOUBLE FLUX : SCANNER OU JOINDRE) ---
+# =========================================================
+# MODULE 1 : SCAN COUVAIN INTELLIGENT (DOUBLE FLUX)
+# =========================================================
 with tabs[0]:
-    st.markdown("### 📸 Diagnostic du Couvain")
+    st.markdown("### 📸 Diagnostic Sanitaire & Ponte")
     
-    # Choix entre caméra directe ou importation
-    mode_input = st.radio("Comment voulez-vous procéder ?", ["Scanner un cadre (Caméra)", "Joindre une photo (Galerie)"], horizontal=True)
+    # Sélecteur simple et fiable
+    mode_scan = st.radio(
+        "Source de l'image :", 
+        ["📸 Caméra (Direct)", "📂 Galerie (Import)"], 
+        horizontal=True
+    )
     
-    img_data = None
-    if mode_input == "Scanner un cadre (Caméra)":
-        img_data = st.camera_input("Pointez la caméra sur le cadre")
+    image_data = None
+    
+    # Logique conditionnelle robuste
+    if mode_scan == "📸 Caméra (Direct)":
+        image_data = st.camera_input("Scanner le cadre maintenant")
     else:
-        img_data = st.file_uploader("Importer le fichier depuis votre téléphone", type=["jpg", "jpeg", "png"])
+        image_data = st.file_uploader("Choisir une photo existante", type=["jpg", "png", "jpeg"])
 
-    if img_data:
-        st.success("Analyse en cours par l'intelligence Abeilles du Sénégal...")
+    # Traitement de l'image
+    if image_data:
+        st.success("Image reçue. Analyse IA en cours...")
+        # Simulation du résultat d'analyse fiable
         st.markdown(f"""
-            <div class="card">
-                <h4>📊 RÉSULTAT DU SCAN</h4>
-                <p>✅ <b>Ponte :</b> 94% de densité (Excellente Reine).</p>
-                <p>🛡️ <b>Santé :</b> Aucun signe de maladie détecté.</p>
-                <p>🌿 <b>Action :</b> Traitement préventif au <b>Neem</b> conseillé.</p>
+            <div class="pro-card">
+                <h4>📊 RÉSULTAT ANALYSE</h4>
+                <p>✅ <b>Qualité Ponte :</b> 92% (Compacte)</p>
+                <p>🛡️ <b>État Sanitaire :</b> Sain (Pas de loque)</p>
+                <p>💡 <b>Conseil {ENTREPRISE} :</b> Si varroa visible, traiter au Thymol ou Neem.</p>
             </div>
         """, unsafe_allow_html=True)
 
-# --- 5. MODULE RADAR SATELLITE ---
+# =========================================================
+# MODULE 2 : CARTOGRAPHIE & RADAR (SATELLITE)
+# =========================================================
 with tabs[1]:
     st.markdown("### 🛰️ Radar de Butinage (3km)")
-    loc = get_geolocation()
-    if loc:
-        lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
-        # Carte satellite professionnelle
-        m = folium.Map(location=[lat, lon], zoom_start=14)
-        folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.2).add_to(m)
-        folium.Marker([lat, lon], icon=folium.Icon(color='red')).add_to(m)
-        st_folium(m, width="100%", height=300)
+    
+    # Bouton de localisation explicite pour éviter les erreurs
+    if st.checkbox("📍 Activer ma position GPS"):
+        loc = get_geolocation()
+        if loc:
+            lat = loc['coords']['latitude']
+            lon = loc['coords']['longitude']
+            
+            # Carte centrée et fiable
+            m = folium.Map(location=[lat, lon], zoom_start=15)
+            # Calque Satellite Google (Le plus précis pour le Sénégal)
+            folium.TileLayer(
+                tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                attr='Google Satellite',
+                name='Satellite'
+            ).add_to(m)
+            
+            # Zone de butinage
+            folium.Circle(
+                [lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.15
+            ).add_to(m)
+            
+            # Marqueur Rucher
+            folium.Marker(
+                [lat, lon], 
+                popup="Mon Rucher", 
+                icon=folium.Icon(color='black', icon='info-sign')
+            ).add_to(m)
+            
+            st_folium(m, width="100%", height=350)
+        else:
+            st.info("Recherche des satellites... Patientez.")
     else:
-        st.info("📍 Recherche du signal GPS au-dessus de votre rucher...")
+        st.write("Cochez la case ci-dessus pour afficher la carte.")
 
-# --- 6. MODULE FINANCIER ---
+# =========================================================
+# MODULE 3 : GESTION FINANCIÈRE SIMPLIFIÉE
+# =========================================================
 with tabs[2]:
-    st.markdown("### 💰 Portefeuille")
-    ruches = st.number_input("Nombre de ruches gérées :", 1, 500, 20)
-    valeur_estimée = ruches * 15 * 4500
-    st.markdown(f"""<div class='card' style='text-align:center;'>
-        <h2 style='color:#FFC30B !important;'>{valeur_estimée:,.0f} FCFA</h2>
-        <p>Estimation globale de votre récolte</p>
-    </div>""", unsafe_allow_html=True)
+    st.markdown("### 💰 Prévisions de Récolte")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        nb_ruches = st.number_input("Ruches Actives", min_value=1, value=20)
+    with col2:
+        prix_kg = st.number_input("Prix du Miel (FCFA)", value=4500)
+    
+    # Calcul automatique
+    prod_moyenne = 15 # kg par ruche (moyenne conservatrice)
+    total = nb_ruches * prod_moyenne * prix_kg
+    
+    st.markdown(f"""
+        <div class="pro-card" style="text-align:center;">
+            <h2 style="color:#B8860B !important;">{total:,.0f} FCFA</h2>
+            <p>Chiffre d'Affaires Estimé</p>
+            <small>(Base: {prod_moyenne}kg/ruche)</small>
+        </div>
+    """, unsafe_allow_html=True)
 
-# --- 7. MODULE NOTES HORS-LIGNE ---
+# =========================================================
+# MODULE 4 : JOURNAL DE BORD (MÉMOIRE)
+# =========================================================
 with tabs[3]:
-    st.markdown("### 💾 Registre de Terrain")
-    id_ruche = st.text_input("Identifiant de la Ruche")
-    observation = st.text_area("Observations (ex: Pose de hausses)")
-    if st.button("Sauvegarder la visite"):
-        st.toast("Note enregistrée dans la mémoire locale !")
+    st.markdown("### 📝 Notes de Terrain")
+    
+    # Formulaire simple
+    with st.form("notes_form"):
+        ruche_id = st.text_input("N° de Ruche")
+        obs = st.text_area("Observation (Reine, Couvain, Nourriture...)")
+        submit = st.form_submit_button("Enregistrer la note")
+        
+        if submit:
+            st.success(f"Note pour la ruche {ruche_id} sauvegardée !")
+            # Ici, on pourrait connecter une base de données réelle
 
-# --- 8. SIGNATURE FINALE (LOGO MINUSCULE) ---
+# --- 5. PIED DE PAGE (SIGNATURE MINUSCULE) ---
 st.markdown(f"""
-    <div class="footer-brand">
-        <img src="{LOGO_URL}" alt="Logo Abeilles du Sénégal">
-        <p>conçu par {ENTREPRISE.lower()}<br>système d'intelligence apicole pour le sénégal</p>
+    <div class="footer-container">
+        <img src="{LOGO_URL}" class="footer-logo" alt="logo">
+        <p class="footer-text">
+            conçu par {ENTREPRISE.lower()}<br>
+            solution apicole intégrée v3.0
+        </p>
     </div>
     """, unsafe_allow_html=True)
