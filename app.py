@@ -4,119 +4,67 @@ from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 import requests
 import urllib.parse
+from datetime import datetime
 
-# --- 1. CONFIGURATION ---
-st.set_page_config(page_title="YAMB PRO - Sénégal", layout="centered")
+# --- CONFIGURATION ---
+st.set_page_config(page_title="YAMB PRO - Élite Sénégal", layout="centered")
 
-# --- 2. STYLE HAUTE VISIBILITÉ (Correction définitive du blanc sur blanc) ---
+# --- STYLE VISUEL FORCÉ ---
 st.markdown("""
     <style>
-    /* Fond de page crème pour reposer les yeux */
     .stApp { background-color: #FDF5E6; }
-    
-    /* FORCE LE NOIR SUR ABSOLUMENT TOUT LE TEXTE */
-    h1, h2, h3, h4, p, span, label, li, div {
-        color: #000000 !important;
-        font-weight: 800 !important;
-    }
-
-    /* Cartes d'information avec bordures noires épaisses */
-    .info-box {
-        background-color: #ffffff !important;
-        border: 4px solid #000000 !important;
-        padding: 20px;
-        border-radius: 15px;
-        margin-bottom: 20px;
-        box-shadow: 8px 8px 0px #FFC30B;
-    }
-
-    /* Titres dorés dans les boites */
-    .info-box h3 { color: #8B4513 !important; margin-top: 0; }
-    
-    /* Alerte Rouge pour les dangers */
-    .danger-box {
-        background-color: #FFEBEB !important;
-        border: 4px solid #CC0000 !important;
-        padding: 15px;
-        border-radius: 10px;
-    }
+    h1, h2, h3, h4, p, span, label { color: #000000 !important; font-weight: 800 !important; }
+    .data-card { background: #ffffff !important; border: 3px solid #000000; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+    .stMetric { background: white; border: 1px solid black; padding: 10px; border-radius: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. ENTÊTE ---
-st.markdown("<h1 style='text-align:center;'>🐝 YAMB PRO - ÉLITE</h1>", unsafe_allow_html=True)
+# --- MÉMOIRE GPS ---
+if 'rucher_save' not in st.session_state: st.session_state['rucher_save'] = None
 
-# --- 4. NAVIGATION ---
-tabs = st.tabs(["📊 TERRAIN", "🌙 LUNE & FLORE", "🍯 PRODUCTION", "🚨 SOS"])
+# --- NAVIGATION ---
+tabs = st.tabs(["🌸 FLORE & MÉTÉO", "🍯 RÉCOLTE", "💾 MÉMOIRE", "🚨 SOS"])
 
 loc = get_geolocation()
 
 with tabs[0]:
-    st.markdown("## 🛰️ Analyse du Rayon de 3 km")
+    st.markdown("### 🛰️ Analyse Terrain (Rayon 3km)")
     if loc:
         lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
         
-        # Météo en texte brut noir (plus sûr que les metrics Streamlit)
+        # Météo
         try:
             w = requests.get(f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true").json()['current_weather']
-            st.markdown(f"""
-                <div class='info-box'>
-                    <h3>☁️ MÉTÉO ACTUELLE</h3>
-                    <p style='font-size:20px;'>Température : {w['temperature']}°C</p>
-                    <p style='font-size:20px;'>Vent : {w['windspeed']} km/h</p>
-                </div>
-            """, unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            col1.metric("TEMPÉRATURE", f"{w['temperature']}°C")
+            col2.metric("VENT", f"{w['windspeed']} km/h")
         except: pass
 
-        # Carte avec Marqueur Rouge et Cercle Jaune
+        # Flore
+        st.markdown("<div class='data-card'><h4>🌳 Kadd & Anacardier</h4><p>Floraison active en Décembre/Janvier. Miel clair et fruité.</p></div>", unsafe_allow_html=True)
+        
+        # Carte
         m = folium.Map(location=[lat, lon], zoom_start=13)
         folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-        folium.Marker([lat, lon], popup="Mon Rucher", icon=folium.Icon(color='red', icon='home')).add_to(m)
-        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.3).add_to(m)
-        st_folium(m, width="100%", height=350)
-    else:
-        st.warning("⚠️ Activez le GPS pour voir votre zone de butinage.")
+        folium.Marker([lat, lon], icon=folium.Icon(color='red')).add_to(m)
+        folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.2).add_to(m)
+        st_folium(m, width="100%", height=300)
 
 with tabs[1]:
-    st.markdown("## 🌙 Cycle Lunaire & Flore")
-    # Calendrier Lunaire simplifié pour l'apiculture
-    st.markdown("""
-        <div class='info-box' style='background-color:#1a0d02 !important;'>
-            <h3 style='color:#FFC30B !important;'>🌒 Premier Croissant</h3>
-            <p style='color:white !important;'>Période de développement : Les colonies sont calmes. Idéal pour les inspections de santé.</p>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("## 🌿 Floraisons du Moment")
-    st.markdown("""
-        <div class='info-box'>
-            <h3>🌳 Kadd (Faidherbia)</h3>
-            <p>Pleine floraison. Nectar abondant mais sensible à l'Harmattan.</p>
-        </div>
-        <div class='info-box'>
-            <h3>🍎 Anacardier</h3>
-            <p>Début de floraison dans les zones côtières.</p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### 🍯 Calculateur de Récolte")
+    nb = st.number_input("Nombre de ruches", 1, 500, 10)
+    st.markdown(f"<div class='data-card'><h1 style='text-align:center;'>{nb * 12} kg</h1><p style='text-align:center; color:green !important;'>Potentiel Miel Bio</p></div>", unsafe_allow_html=True)
 
 with tabs[2]:
-    st.markdown("## 🍯 Calculateur de Récolte")
-    nb = st.number_input("Nombre de ruches productives", 1, 500, 10)
-    recolte_estimee = nb * 12
-    st.markdown(f"""
-        <div class='info-box' style='text-align:center;'>
-            <p>ESTIMATION TOTALE</p>
-            <h1 style='font-size:70px; margin:10px 0;'>{recolte_estimee} kg</h1>
-            <p style='color:green !important;'>Label : Miel Bio du Sénégal</p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### 💾 Sauvegarde Rucher")
+    if loc:
+        if st.button("💾 ENREGISTRER CETTE POSITION"):
+            st.session_state['rucher_save'] = {"lat": loc['coords']['latitude'], "lon": loc['coords']['longitude']}
+            st.success("Position enregistrée !")
 
 with tabs[3]:
-    st.markdown("## 🚨 Centre d'Urgence Unité d'Élite")
-    st.markdown("""<div class='danger-box'>⚠️ RISQUE FEU : La brousse est très sèche. Vos pare-feux doivent être dégagés sur 5 mètres.</div>""", unsafe_allow_html=True)
-    
-    incident = st.selectbox("Type d'urgence", ["Feu de brousse", "Vol de ruches", "Mortalité massive"])
-    if st.button("📲 SIGNALER L'URGENCE VIA WHATSAPP"):
-        gps = f"{loc['coords']['latitude']},{loc['coords']['longitude']}" if loc else "Non disponible"
-        msg = urllib.parse.quote(f"🚨 URGENCE YAMB PRO\nIncident: {incident}\nLocalisation GPS: https://www.google.com/maps?q={gps}")
-        st.markdown(f'<a href="https://wa.me/221XXXXXXX?text={msg}" target="_blank" style="display:block; background:green; color:white; padding:20px; text-align:center; border-radius:10px; text-decoration:none;">VALIDER L\'ENVOI WHATSAPP</a>', unsafe_allow_html=True)
+    st.markdown("### 🚨 Urgence Unité d'Élite")
+    incident = st.text_input("Détail de l'incident (ex: Feu, Vol)")
+    if st.button("📲 ENVOYER ALERTE WHATSAPP"):
+        msg = urllib.parse.quote(f"URGENCE YAMB PRO\nIncident: {incident}\nPosition: https://maps.google.com/?q={loc['coords']['latitude']},{loc['coords']['longitude']}")
+        st.markdown(f'<a href="https://wa.me/?text={msg}" target="_blank">Cliquez ici pour envoyer</a>', unsafe_allow_html=True)
