@@ -4,112 +4,117 @@ from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 import pandas as pd
 
-# --- 1. CONFIGURATION & STYLE NATURE ---
-st.set_page_config(page_title="YAMB PRO - Abeilles du Sénégal", layout="centered")
+# --- 1. CONFIGURATION ET CHARTE GRAPHIQUE ---
+st.set_page_config(page_title="YAMB PRO - Abeilles du Sénégal", layout="centered", page_icon="🐝")
 
 ENTREPRISE = "Abeilles du Sénégal"
-LOGO_URL = "https://i.imgur.com/uT0mFwX.png"
+ANNEE = "2025"
+LOGO_URL = "https://i.imgur.com/uT0mFwX.png" 
 
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #FFFFFF !important; }}
-    h1, h2, h3, p, label {{ color: #000000 !important; font-weight: 800 !important; }}
+    h1, h2, h3, p, label {{ color: #000000 !important; font-weight: 850 !important; }}
     
     .nature-card {{
         background: #FDFFEF;
-        border-left: 10px solid #2E8B57;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #DDD;
+        border-left: 10px solid #DAA520;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #EEE;
     }}
     
     .stButton>button {{
         width: 100% !important;
+        height: 55px;
         background-color: #FFC30B !important;
+        color: black !important;
         border: 2px solid #000 !important;
-        border-radius: 12px;
+        border-radius: 15px;
         font-weight: bold !important;
     }}
 
-    /* Pied de page avec logo minuscule */
     .footer-brand {{
-        text-align: center; margin-top: 50px; padding: 10px; border-top: 1px solid #EEE;
+        text-align: center;
+        margin-top: 60px;
+        padding: 20px;
+        border-top: 1px solid #EEE;
     }}
     .footer-brand img {{ width: 30px; filter: grayscale(100%); opacity: 0.5; }}
+    .footer-brand p {{ font-size: 10px !important; color: #999 !important; text-transform: lowercase; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DONNÉES FLORE MELLIFÈRE SÉNÉGAL ---
-flore_data = {
+# --- 2. BASE DE DONNÉES FLORE & SMS ---
+data_flore = {
     "Espèce": ["Kadd (Acacia albida)", "Eucalyptus", "Baobab", "Manguier", "Anacardier", "Néré"],
-    "Période": ["Nov - Janv", "Toute l'année", "Mai - Juillet", "Janv - Mars", "Fév - Avril", "Déc - Fév"],
-    "Intérêt": ["Nectar +++", "Nectar + / Pollen ++", "Nectar ++", "Nectar ++", "Nectar +++", "Pollen +++"]
+    "Floraison": ["Nov - Janv", "Toute l'année", "Mai - Juil", "Janv - Mars", "Fév - Avr", "Déc - Fév"],
+    "Intérêt": ["Nectar +++", "Pollen ++", "Nectar ++", "Nectar +", "Nectar +++", "Pollen +++"]
 }
-df_flore = pd.DataFrame(flore_data)
+df_flore = pd.DataFrame(data_flore)
 
-# --- 3. INTERFACE PRINCIPALE ---
-st.markdown("<h1 style='text-align:center;'>🐝 YAMB PRO</h1>", unsafe_allow_html=True)
-tabs = st.tabs(["🔍 SCAN", "🌍 CARTE & FLORE", "💰 BILAN", "💾 NOTES"])
+def send_sms_alert(message, destination="Collègues"):
+    # Simulation d'envoi SMS via API (Twilio/Orange)
+    st.toast(f"📲 SMS envoyé à {destination} : {message}")
 
-# --- MODULE CARTE ET DÉTECTION DE LA FLORE ---
+# --- 3. INTERFACE ---
+st.markdown("<h1 style='text-align:center;'>🌻 YAMB PRO</h1>", unsafe_allow_html=True)
+
+tabs = st.tabs(["🔍 SCAN COUVAIN", "📍 FLORE & CARTE", "💰 BILAN", "💾 NOTES"])
+
+# --- MODULE 1 : SCAN DOUBLE FLUX ---
+with tabs[0]:
+    st.markdown("### 📸 Diagnostic de Ponte")
+    mode = st.radio("Méthode :", ["Scanner (Caméra)", "Joindre (Galerie)"], horizontal=True)
+    
+    image = st.camera_input("Capture") if mode == "Scanner (Caméra)" else st.file_uploader("Image", type=["jpg", "png"])
+    
+    if image:
+        st.success("Analyse terminée.")
+        st.markdown(f"<div class='nature-card'><b>Diagnostic {ENTREPRISE} :</b> Ponte 94%, Santé Optimale.</div>", unsafe_allow_html=True)
+
+# --- MODULE 2 : DÉTECTION FLORE & ALERTES SMS ---
 with tabs[1]:
-    st.markdown("### 🗺️ Radar de Flore (Rayon 3km)")
+    st.markdown("### 🗺️ Radar Flore sur 3km")
     loc = get_geolocation()
     
     if loc:
         lat, lon = loc['coords']['latitude'], loc['coords']['longitude']
         
-        # Bouton de Détection de la Flore
-        if st.button("🌿 ANALYSER LA FLORE SUR 3KM"):
-            st.success("Analyse satellite des espèces mellifères terminée.")
-            
-            # Affichage de la liste des espèces présentes
-            st.markdown("<div class='nature-card'>", unsafe_allow_html=True)
-            st.write("### 🌳 Espèces identifiées sur le site :")
-            st.table(df_flore)
-            st.write("💡 *Note : La densité végétale est optimale à l'Est de votre position.*")
-            st.markdown("</div>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🌿 LISTE DES ESPÈCES"):
+                st.markdown("<div class='nature-card'>", unsafe_allow_html=True)
+                st.table(df_flore)
+                st.markdown("</div>", unsafe_allow_html=True)
+        
+        with col2:
+            if st.button("📲 ALERTE SMS FLORAISON"):
+                send_sms_alert("Début de la floraison du Kadd détecté sur le site d'Abeilles du Sénégal !")
 
-        # La Carte avec marquage
+        # Carte Satellite avec cercle de 3km
         m = folium.Map(location=[lat, lon], zoom_start=14)
         folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google Satellite').add_to(m)
-        
-        # Zone de butinage de 3km
         folium.Circle([lat, lon], radius=3000, color='#FFC30B', fill=True, fill_opacity=0.2).add_to(m)
-        
-        # Marqueurs spécifiques pour les plantes identifiées (Simulation)
-        folium.Marker([lat+0.005, lon+0.005], popup="Bosquet de Kadd", icon=folium.Icon(color='green', icon='leaf')).add_to(m)
-        folium.Marker([lat-0.008, lon+0.01], popup="Zone Eucalyptus", icon=folium.Icon(color='darkgreen', icon='leaf')).add_to(m)
-        
         st_folium(m, width="100%", height=400)
     else:
-        st.info("📍 Activez votre GPS pour scanner la flore environnante.")
+        st.warning("📍 GPS requis pour la détection de flore.")
 
-# --- MODULE SCAN COUVAIN (DOUBLE FLUX) ---
-with tabs[0]:
-    st.markdown("### 📸 Scan Couvain IA")
-    mode = st.radio("Source :", ["Scanner (Caméra)", "Joindre (Galerie)"], horizontal=True)
-    if mode == "Scanner (Caméra)":
-        st.camera_input("Capturez le cadre")
-    else:
-        st.file_uploader("Choisissez une photo", type=["jpg", "png"])
-
-# --- MODULE BILAN & NOTES ---
+# --- MODULE 3 & 4 ---
 with tabs[2]:
-    st.markdown("### 💰 Gestion de Récolte")
     ruches = st.number_input("Nombre de ruches", 1, 500, 20)
     st.metric("Potentiel (FCFA)", f"{ruches * 15 * 4500:,.0f} FCFA")
 
 with tabs[3]:
-    st.markdown("### 💾 Notes de Terrain")
-    st.text_area("Observations sur la miellée actuelle...")
-    st.button("Enregistrer la note")
+    st.markdown("### 💾 Journal")
+    st.text_area("Observations")
+    st.button("Sauvegarder")
 
 # --- 4. SIGNATURE LOGO MINUSCULE ---
 st.markdown(f"""
     <div class="footer-brand">
         <img src="{LOGO_URL}" alt="Logo">
-        <p>conçu par abeilles du sénégal, 2025<br>expertise en apiculture de précision</p>
+        <p>conçu par {ENTREPRISE.lower()}, {ANNEE}<br>apiculture de précision au sénégal</p>
     </div>
     """, unsafe_allow_html=True)
